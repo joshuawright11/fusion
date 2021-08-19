@@ -4,7 +4,7 @@
 ///
 /// If the enclosing type of the property wrapper is not
 /// `Containerized`, injected services will be resolved
-/// from `Container.global`.
+/// from `Container.default`.
 ///
 /// Usage:
 /// ```swift
@@ -12,11 +12,11 @@
 ///     let container = Container()
 ///
 ///     // Will be resolved from `self.container` instead of
-///     // `Container.global`
+///     // `Container.default`
 ///     @Inject var database: Database
 /// }
 /// ```
-public protocol Containerized: class {
+public protocol Containerized: AnyObject {
     /// The container from which `@Inject`ed services on this type
     /// should be resolved.
     var container: Container { get }
@@ -24,7 +24,7 @@ public protocol Containerized: class {
 
 /// Provides a convenient `@propertyWrapper` for injecting services to
 /// a type. By default, resolves services from the global container
-/// (`Container.global`) but if the enclosing type conforms to
+/// (`Container.default`) but if the enclosing type conforms to
 /// `Containerized` services are resolved from
 /// `EnclosingType.container`.
 @propertyWrapper
@@ -36,7 +36,7 @@ public class Inject<Service> {
     
     /// An instance of the service this property wrapper is injecting.
     public var wrappedValue: Service {
-        get { self.resolve(in: .global) }
+        get { self.resolve(in: .default) }
         set { fatalError("Injected services shouldn't be set manually.") }
     }
     
@@ -71,7 +71,7 @@ public class Inject<Service> {
     ) -> Service {
         get {
             let customContainer = (object as? Containerized)?.container
-            return object[keyPath: storageKeyPath].resolve(in: customContainer ?? .global)
+            return object[keyPath: storageKeyPath].resolve(in: customContainer ?? .default)
         }
         set {
             // This setter is needed so that the propert wrapper will

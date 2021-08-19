@@ -91,19 +91,12 @@ final class FusionTest: XCTestCase {
 }
 
 private final class TestingContainerized: Containerized {
-    var container: Container
+    let container: Container
     
-    @Inject
-    var string: String
-    
-    @Inject
-    var int: Int
-    
-    @Inject(true)
-    var boolTrue: Bool
-    
-    @Inject(false)
-    var boolFalse: Bool
+    @Inject        var string: String
+    @Inject        var int: Int
+    @Inject(true)  var boolTrue: Bool
+    @Inject(false) var boolFalse: Bool
     
     init(container: Container) {
         self.container = container
