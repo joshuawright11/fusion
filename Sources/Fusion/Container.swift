@@ -29,14 +29,14 @@ public final class Container {
     /// for singletons and multitons). Access to this is threadsafe.
     private var instances: [String: Any] {
         get {
-            self.lock.lock()
-            defer { self.lock.unlock() }
-            return self._instances
+            lock.lock()
+            defer { lock.unlock() }
+            return _instances
         }
         set {
-            self.lock.lock()
-            defer { self.lock.unlock() }
-            self._instances = newValue
+            lock.lock()
+            defer { lock.unlock() }
+            _instances = newValue
         }
     }
     
@@ -65,8 +65,8 @@ public final class Container {
     ///   - factory: The closure for instantiating an instance of the
     ///     service.
     public func register<T>(_ service: T.Type, factory: @escaping (Container) -> T) {
-        let key = self.storageKey(for: service, identifier: nil)
-        self.resolvers[key] = (.transient, { container, _ in
+        let key = storageKey(for: service, identifier: nil)
+        resolvers[key] = (.transient, { container, _ in
             factory(container)
         })
     }
@@ -80,8 +80,8 @@ public final class Container {
     ///   - factory: The closure for instantiating an instance of the
     ///     service.
     public func register<S>(singleton service: S.Type, factory: @escaping (Container) -> S) {
-        let key = self.storageKey(for: service, identifier: nil)
-        self.resolvers[key] = (.singleton, { container, _ in
+        let key = storageKey(for: service, identifier: nil)
+        resolvers[key] = (.singleton, { container, _ in
             factory(container)
         })
     }
@@ -95,13 +95,9 @@ public final class Container {
     ///   - service: The type of the service to register.
     ///   - factory: The closure for instantiating an instance of the
     ///     service.
-    public func register<S, H: Hashable>(
-        singleton service: S.Type,
-        identifier: H,
-        factory: @escaping (Container) -> S
-    ) {
-        let key = self.storageKey(for: service, identifier: identifier)
-        self.resolvers[key] = (.singleton, { container, _ in
+    public func register<S, H: Hashable>(singleton service: S.Type, identifier: H, factory: @escaping (Container) -> S) {
+        let key = storageKey(for: service, identifier: identifier)
+        resolvers[key] = (.singleton, { container, _ in
             factory(container)
         })
     }
@@ -112,7 +108,7 @@ public final class Container {
     /// - Parameter service: The type of the service to resolve.
     /// - Returns: An instance of the service.
     public func resolveOptional<T>(_ service: T.Type) -> T? {
-        self._resolve(service, identifier: nil)
+        _resolve(service, identifier: nil)
     }
     
     /// Resolves a service with the given `identifier`, returning an
@@ -123,7 +119,7 @@ public final class Container {
     ///   resolve.
     /// - Returns: An instance of the service.
     public func resolveOptional<T, H: Hashable>(_ service: T.Type, identifier: H?) -> T? {
-        self._resolve(service, identifier: identifier)
+        _resolve(service, identifier: identifier)
     }
     
     /// Resolves a service, returning an instance of it.
@@ -133,7 +129,7 @@ public final class Container {
     /// - Parameter service: The type of the service to resolve.
     /// - Returns: An instance of the service.
     public func resolve<T>(_ service: T.Type) -> T {
-        self.assertNotNil(self._resolve(service, identifier: nil))
+        assertNotNil(_resolve(service, identifier: nil))
     }
     
     /// Resolves a service with the given `identifier`, returning an
@@ -147,7 +143,7 @@ public final class Container {
     ///     resolve.
     /// - Returns: An instance of the service.
     public func resolve<T, H: Hashable>(_ service: T.Type, identifier: H?) -> T {
-        self.assertNotNil(self._resolve(service, identifier: identifier))
+        assertNotNil(_resolve(service, identifier: identifier))
     }
     
     /// Resolves a generic service with an optional identifier.
@@ -161,16 +157,16 @@ public final class Container {
     /// - Returns: An instance of the service, if it is able to be
     ///   resolved by this `Container` or it's parents.
     func _resolve<T>(_ service: T.Type, identifier: AnyHashable?) -> T? {
-        let key = self.storageKey(for: service, identifier: identifier)
-        if let instance = self.instances[key] {
-            return self.assertType(of: instance)
-        } else if let resolver = self.resolvers[key] {
-            let instance: T = self.assertType(of: resolver.factory(self, identifier))
+        let key = storageKey(for: service, identifier: identifier)
+        if let instance = instances[key] {
+            return assertType(of: instance)
+        } else if let resolver = resolvers[key] {
+            let instance: T = assertType(of: resolver.factory(self, identifier))
             if resolver.behavior == .singleton {
-                self.instances[key] = instance
+                instances[key] = instance
             }
             return instance
-        } else if let instance = self.parent?._resolve(service, identifier: identifier) {
+        } else if let instance = parent?._resolve(service, identifier: identifier) {
             return instance
         }
         return nil

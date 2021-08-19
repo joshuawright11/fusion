@@ -36,7 +36,7 @@ public class Inject<Service> {
     
     /// An instance of the service this property wrapper is injecting.
     public var wrappedValue: Service {
-        get { self.resolve(in: .default) }
+        get { resolve(in: .default) }
         set { fatalError("Injected services shouldn't be set manually.") }
     }
     
@@ -56,7 +56,7 @@ public class Inject<Service> {
     ///   from.
     /// - Returns: An instance of `Service` resolved from `container`.
     private func resolve(in container: Container) -> Service {
-        container._resolve(Service.self, identifier: self.identifier)!
+        container._resolve(Service.self, identifier: identifier)!
     }
     
     /// Leverages an undocumented `Swift` API for accessing the
