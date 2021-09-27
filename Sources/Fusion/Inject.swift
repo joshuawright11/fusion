@@ -37,7 +37,6 @@ public class Inject<Service> {
     /// An instance of the service this property wrapper is injecting.
     public var wrappedValue: Service {
         get { resolve(in: .default) }
-        set { fatalError("Injected services shouldn't be set manually.") }
     }
     
     /// Create the property wrapper with no identifier.
@@ -66,17 +65,12 @@ public class Inject<Service> {
     /// the property wrapper is accessed.
     public static subscript<EnclosingSelf>(
         _enclosingInstance object: EnclosingSelf,
-        wrapped wrappedKeyPath: ReferenceWritableKeyPath<EnclosingSelf, Service>,
-        storage storageKeyPath: ReferenceWritableKeyPath<EnclosingSelf, Inject<Service>>
+        wrapped wrappedKeyPath: KeyPath<EnclosingSelf, Service>,
+        storage storageKeyPath: KeyPath<EnclosingSelf, Inject<Service>>
     ) -> Service {
         get {
             let customContainer = (object as? Containerized)?.container
             return object[keyPath: storageKeyPath].resolve(in: customContainer ?? .default)
-        }
-        set {
-            // This setter is needed so that the propert wrapper will
-            // have a `WritableKeyPath` for using this subscript.
-            fatalError("Injected services shouldn't be set manually.")
         }
     }
 }

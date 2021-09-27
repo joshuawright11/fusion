@@ -1,6 +1,6 @@
 /// Convenient static accessors for working with the default
 /// container.
-public extension Container {
+extension Container {
     /// Register a transient service to the default container.
     /// Transient means that it's factory closure will be
     /// called _each time_ the service type is resolved.
@@ -9,7 +9,7 @@ public extension Container {
     ///   - service: The type of the service to register.
     ///   - factory: The closure for instantiating an instance of the
     ///     service.
-    static func register<T>(_ service: T.Type, factory: @escaping (Container) -> T) {
+    public static func register<T>(_ service: T.Type, factory: @escaping (Container) -> T) {
         Container.default.register(service, factory: factory)
     }
     
@@ -22,7 +22,7 @@ public extension Container {
     ///   - service: The type of the service to register.
     ///   - factory: The closure for instantiating an instance of the
     ///     service.
-    static func register<S>(singleton service: S.Type, factory: @escaping (Container) -> S) {
+    public static func register<S>(singleton service: S.Type, factory: @escaping (Container) -> S) {
         Container.default.register(singleton: service, factory: factory)
     }
     
@@ -36,8 +36,18 @@ public extension Container {
     ///   - service: The type of the service to register.
     ///   - factory: The closure for instantiating an instance of the
     ///     service.
-    static func register<S, H: Hashable>(singleton service: S.Type, identifier: H, factory: @escaping (Container) -> S) {
+    public static func register<S, H: Hashable>(singleton service: S.Type, identifier: H, factory: @escaping (Container) -> S) {
         Container.default.register(singleton: service, identifier: identifier, factory: factory)
+    }
+    
+    /// Register a transient service to the default container.
+    public static func register<T>(_ transient: @escaping @autoclosure () -> T) {
+        register(T.self, factory: { _ in transient() })
+    }
+    
+    /// Register a singleton service to the default container.
+    public static func register<T>(singleton: @escaping @autoclosure () -> T) {
+        register(singleton: T.self, factory: { _ in singleton() })
     }
     
     /// Resolves a service from the default container, returning an
@@ -45,7 +55,7 @@ public extension Container {
     ///
     /// - Parameter service: The type of the service to resolve.
     /// - Returns: An instance of the service.
-    static func resolveOptional<T>(_ service: T.Type) -> T? {
+    public static func resolveOptional<T>(_ service: T.Type) -> T? {
         Container.default.resolveOptional(service)
     }
     
@@ -57,7 +67,7 @@ public extension Container {
     /// - Parameter identifier: The identifier of the service to
     ///   resolve.
     /// - Returns: An instance of the service.
-    static func resolveOptional<T, H: Hashable>(_ service: T.Type, identifier: H?) -> T? {
+    public static func resolveOptional<T, H: Hashable>(_ service: T.Type, identifier: H?) -> T? {
         Container.default.resolveOptional(service, identifier: identifier)
     }
     
@@ -68,7 +78,7 @@ public extension Container {
     ///
     /// - Parameter service: The type of the service to resolve.
     /// - Returns: An instance of the service.
-    static func resolve<T>(_ service: T.Type) -> T {
+    public static func resolve<T>(_ service: T.Type) -> T {
         Container.default.resolve(service)
     }
     
@@ -82,7 +92,7 @@ public extension Container {
     ///   - identifier: The identifier of the service to
     ///     resolve.
     /// - Returns: An instance of the service.
-    static func resolve<T, H: Hashable>(_ service: T.Type, identifier: H?) -> T {
+    public static func resolve<T, H: Hashable>(_ service: T.Type, identifier: H?) -> T {
         Container.default.resolve(service, identifier: identifier)
     }
 }

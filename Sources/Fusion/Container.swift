@@ -14,7 +14,7 @@ public final class Container {
     /// identifier are passed in and a service is generated.
     private typealias FactoryClosure = (Container, Any?) -> Any
     
-    /// The default service container.
+    /// The main service container.
     public static var `default` = Container()
     
     /// The parent container of this container. Resolves that don't
@@ -84,6 +84,26 @@ public final class Container {
         resolvers[key] = (.singleton, { container, _ in
             factory(container)
         })
+    }
+    
+    /// Register a transient service to the container.
+    public func register<T>(_ transient: @escaping (Container) -> T) {
+        register(T.self, factory: transient)
+    }
+    
+    /// Register a singleton service to the container.
+    public func register<T>(singleton: @escaping (Container) -> T) {
+        register(singleton: T.self, factory: singleton)
+    }
+    
+    /// Register a transient service to the container.
+    public func register<T>(_ transient: @escaping @autoclosure () -> T) {
+        register(T.self, factory: { _ in transient() })
+    }
+    
+    /// Register a singleton service to the container.
+    public func register<T>(singleton: @escaping @autoclosure () -> T) {
+        register(singleton: T.self, factory: { _ in singleton() })
     }
     
     /// Register a identified singleton service to this container.
