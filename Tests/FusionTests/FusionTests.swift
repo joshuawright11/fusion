@@ -54,6 +54,21 @@ final class FusionTest: XCTestCase {
         self.waitForExpectations(timeout: 0)
     }
     
+    func testOverride() {
+        container.register(singleton: "Testing1")
+        XCTAssertEqual(container.resolve(String.self), "Testing1")
+        container.register(singleton: "Testing2")
+        XCTAssertEqual(container.resolve(String.self), "Testing2")
+        container.register("Testing3")
+        XCTAssertEqual(container.resolve(String.self), "Testing3")
+        container.register("Testing4")
+        XCTAssertEqual(container.resolve(String.self), "Testing4")
+        container.register(singleton: "Testing5")
+        XCTAssertEqual(container.resolve(String.self), "Testing5")
+        container.register(singleton: "Testing6")
+        XCTAssertEqual(container.resolve(String.self), "Testing6")
+    }
+    
     func testContainer() {
         let childContainer = Container(parent: container)
         

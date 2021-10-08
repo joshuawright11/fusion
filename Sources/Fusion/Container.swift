@@ -66,6 +66,7 @@ public final class Container {
     ///     service.
     public func register<T>(_ service: T.Type, factory: @escaping (Container) -> T) {
         let key = storageKey(for: service, identifier: nil)
+        instances.removeValue(forKey: key)
         resolvers[key] = (.transient, { container, _ in
             factory(container)
         })
@@ -81,6 +82,7 @@ public final class Container {
     ///     service.
     public func register<S>(singleton service: S.Type, factory: @escaping (Container) -> S) {
         let key = storageKey(for: service, identifier: nil)
+        instances.removeValue(forKey: key)
         resolvers[key] = (.singleton, { container, _ in
             factory(container)
         })
@@ -117,6 +119,7 @@ public final class Container {
     ///     service.
     public func register<S, H: Hashable>(singleton service: S.Type, identifier: H, factory: @escaping (Container) -> S) {
         let key = storageKey(for: service, identifier: identifier)
+        instances.removeValue(forKey: key)
         resolvers[key] = (.singleton, { container, _ in
             factory(container)
         })
