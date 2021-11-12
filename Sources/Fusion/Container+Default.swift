@@ -36,7 +36,7 @@ extension Container {
     ///   - service: The type of the service to register.
     ///   - factory: The closure for instantiating an instance of the
     ///     service.
-    public static func register<S, H: Hashable>(singleton service: S.Type, identifier: H, factory: @escaping (Container) -> S) {
+    public static func register<S, H: Hashable>(singleton service: S.Type, identifier: H?, factory: @escaping (Container) -> S) {
         Container.default.register(singleton: service, identifier: identifier, factory: factory)
     }
     
