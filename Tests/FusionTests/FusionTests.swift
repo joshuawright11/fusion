@@ -112,6 +112,12 @@ final class FusionTest: XCTestCase {
         XCTAssertEqual(instance.boolTrue, true)
         XCTAssertEqual(instance.boolFalse, false)
     }
+    
+    func testProperlyCastNilToHashable() {
+        let container = Container.default
+        container.register(singleton: "cat", identifier: nil)
+        XCTAssertEqual(container.resolve(String.self), "cat")
+    }
 }
 
 private struct TestingDefault {

@@ -55,7 +55,7 @@ public class Inject<Service> {
     ///   from.
     /// - Returns: An instance of `Service` resolved from `container`.
     private func resolve(in container: Container) -> Service {
-        container._resolve(Service.self, identifier: identifier)!
+        return container._resolve(Service.self, identifier: identifier)!
     }
     
     /// Leverages an undocumented `Swift` API for accessing the

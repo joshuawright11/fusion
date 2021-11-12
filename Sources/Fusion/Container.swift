@@ -104,8 +104,8 @@ public final class Container {
     }
     
     /// Register a singleton service to the container.
-    public func register<T>(singleton: @escaping @autoclosure () -> T) {
-        register(singleton: T.self, factory: { _ in singleton() })
+    public func register<T>(singleton: @escaping @autoclosure () -> T, identifier: AnyHashable? = nil) {
+        register(singleton: T.self, identifier: identifier, factory: { _ in singleton() })
     }
     
     /// Register a identified singleton service to this container.
@@ -117,7 +117,7 @@ public final class Container {
     ///   - service: The type of the service to register.
     ///   - factory: The closure for instantiating an instance of the
     ///     service.
-    public func register<S, H: Hashable>(singleton service: S.Type, identifier: H, factory: @escaping (Container) -> S) {
+    public func register<S, H: Hashable>(singleton service: S.Type, identifier: H?, factory: @escaping (Container) -> S) {
         let key = storageKey(for: service, identifier: identifier)
         instances.removeValue(forKey: key)
         resolvers[key] = (.singleton, { container, _ in
