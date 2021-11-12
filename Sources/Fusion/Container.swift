@@ -205,11 +205,7 @@ public final class Container {
     /// - Returns: A string for keying the dictionaries that may hold
     ///   instances or factories associated with the service type.
     private func storageKey<T>(for service: T.Type, identifier: AnyHashable?) -> String {
-        var base = "\(service)"
-        if let identifier = identifier {
-            base += "_\(identifier.hashValue)"
-        }
-        return base
+        "\(service)_\(identifier.hashValue)"
     }
     
     /// Asserts that an optional value is not nil. If it is nil, a
