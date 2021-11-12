@@ -55,7 +55,11 @@ public class Inject<Service> {
     ///   from.
     /// - Returns: An instance of `Service` resolved from `container`.
     private func resolve(in container: Container) -> Service {
-        return container._resolve(Service.self, identifier: identifier)!
+        guard let service = container._resolve(Service.self, identifier: identifier) else {
+            fatalError("Unable to find service \(Service.self) with identifier \(identifier.map { "\($0)" } ?? "nil")")
+        }
+        
+        return service
     }
     
     /// Leverages an undocumented `Swift` API for accessing the

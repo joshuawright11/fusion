@@ -117,6 +117,11 @@ final class FusionTest: XCTestCase {
         let container = Container.default
         container.register(singleton: "cat", identifier: nil)
         XCTAssertEqual(container.resolve(String.self), "cat")
+        
+        XCTAssertEqual(container._resolve(String.self, identifier: nil), "cat")
+        
+        @Inject var string: String
+        XCTAssertEqual(string, "cat")
     }
 }
 
