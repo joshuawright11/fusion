@@ -32,7 +32,7 @@ public class Inject<Service> {
     /// An optional identifier that may be associated with the service
     /// this property wrapper is injecting. Used for storing any
     /// identifiers of a service.
-    var identifier: AnyHashable?
+    private var identifier: AnyHashable?
     
     /// An instance of the service this property wrapper is injecting.
     public var wrappedValue: Service {
@@ -56,17 +56,14 @@ public class Inject<Service> {
     /// - Returns: An instance of `Service` resolved from `container`.
     private func resolve(in container: Container) -> Service {
         guard let service = container._resolve(Service.self, identifier: identifier) else {
-            fatalError("Unable to find service \(Service.self) with identifier \(identifier.map { "\($0)" } ?? "nil")")
+            preconditionFailure("Unable to find service \(Service.self) with identifier \(identifier.map { "\($0)" } ?? "nil")")
         }
         
         return service
     }
     
-    /// Leverages an undocumented `Swift` API for accessing the
-    /// enclosing type of a property wrapper to detect if the
-    /// enclosing type is `Containerized` and then use that
-    /// container for resolving when the `wrappedValue` of
-    /// the property wrapper is accessed.
+    /// Resolves the value, resolving from the specified container if
+    /// `EnclosingSelf` is `Containerized`.
     public static subscript<EnclosingSelf>(
         _enclosingInstance object: EnclosingSelf,
         wrapped wrappedKeyPath: KeyPath<EnclosingSelf, Service>,

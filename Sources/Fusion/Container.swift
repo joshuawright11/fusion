@@ -1,7 +1,7 @@
 import Foundation
 
 /// The caching behavior, per container, for a factory.
-private enum ResolveBehavior {
+public enum ResolveBehavior: String {
     /// A new instance should be created once per container.
     case singleton
     /// A new instance should be created at every `.resolve(...)`.
@@ -10,6 +10,26 @@ private enum ResolveBehavior {
 
 /// A container from which services should be registered and resolved.
 public final class Container {
+    struct StorageKey: Hashable {
+        let type: Any.Type
+        let identifier: AnyHashable
+        
+        func hash(into hasher: inout Hasher) {
+            hasher.combine(identifier)
+            hasher.combine("\(type)")
+        }
+        
+        static func == (lhs: Container.StorageKey, rhs: Container.StorageKey) -> Bool {
+            lhs.hashValue == rhs.hashValue
+        }
+    }
+    
+    struct StorageEntry {
+        let factory: (Container) -> Any
+        let resolveBehavior: ResolveBehavior
+        let cachedValue: Any?
+    }
+    
     /// Generic factory closure. A container and an optional
     /// identifier are passed in and a service is generated.
     private typealias FactoryClosure = (Container, Any?) -> Any
@@ -55,6 +75,8 @@ public final class Container {
     public init(parent: Container? = nil) {
         self.parent = parent
     }
+    
+    // MARK: Registration
     
     /// Register a transient service to this container. Transient
     /// means that it's factory closure will be called
@@ -124,6 +146,8 @@ public final class Container {
             factory(container)
         })
     }
+    
+    // MARK: Resolving
     
     /// Resolves a service, returning an instance of it, if one is
     /// registered.
@@ -216,7 +240,7 @@ public final class Container {
     /// - Returns: The unwrapped value `T`.
     private func assertNotNil<T>(_ value: T?) -> T {
         guard let unwrapped = value else {
-            fatalError("Unable to resolve service of type \(T.self)! Perhaps it isn't registered?")
+            preconditionFailure("Unable to resolve service of type \(T.self)! Perhaps it isn't registered?")
         }
         
         return unwrapped
@@ -232,9 +256,83 @@ public final class Container {
     ///   successful.
     private func assertType<T, U>(of instance: T, equals: U.Type = U.self) -> U {
         guard let instance = instance as? U else {
-            fatalError("Internal storage type mismatch.")
+            preconditionFailure("Internal storage type mismatch.")
         }
         
         return instance
     }
+}
+
+extension Container: CustomDebugStringConvertible {
+    public var debugDescription: String {
+        var string = """
+            *Resolvers*:\n
+            """
+        string.append(
+            resolvers
+                .map { "- \($1.behavior.rawValue): \($0)" }
+                .joined(separator: "\n")
+        )
+        string.append("\n*Cached Instances*:\n")
+        string.append(instances.map { "- \($0): \($1)" }.joined(separator: "\n"))
+        return string
+    }
+}
+
+/*
+ Register
+ - identifier
+ - singleton / transient
+ - value / with container
+ Resolve
+ - identifier
+ - throwing / optional / fatal
+ */
+
+extension Container {
+    typealias ContainerFactory<T> = (Container) -> T
+    typealias Factory<T> = () -> T
+    
+    // Register
+    
+    func register<T>(identifier: AnyHashable = .default, behavior: ResolveBehavior = .transient, as type: T.Type = T.self, factory: @escaping ContainerFactory<T>) {
+        
+    }
+    
+    func register<T>(identifier: AnyHashable = .default, behavior: ResolveBehavior = .transient, as type: T.Type = T.self, factory: @escaping @autoclosure Factory<T>) {
+        
+    }
+    
+    // Resolve
+    
+    func resolve<T>(_ type: T.Type = T.self, identifier: AnyHashable = .default) -> T? {
+        return nil
+    }
+    
+    func resolveThrowing<T>(_ type: T.Type = T.self, identifier: AnyHashable = .default) throws -> T {
+        try unwrap(resolve(identifier: identifier))
+    }
+    
+    func resolveAssert<T>(_ type: T.Type = T.self, identifier: AnyHashable = .default) -> T {
+        assert(resolve(identifier: identifier))
+    }
+    
+    private func unwrap<T>(_ value: T?) throws -> T {
+        guard let unwrapped = value else { throw FusionError.notRegistered(T.self) }
+        return unwrapped
+    }
+    
+    private func assert<T>(_ value: T?) -> T {
+        guard let unwrapped = value else { preconditionFailure("Unable to resolve service of type \(T.self)! Perhaps it isn't registered?") }
+        return unwrapped
+    }
+}
+
+public enum FusionError: Error {
+    case notRegistered(Any.Type)
+}
+
+extension AnyHashable {
+    /// The default identifier for services.
+    static var `default` = AnyHashable(nil as AnyHashable?)
 }
