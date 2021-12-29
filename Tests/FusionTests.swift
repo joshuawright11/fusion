@@ -114,7 +114,6 @@ final class FusionTest: XCTestCase {
     }
     
     func testInject() {
-        let container = Container.main
         container.register(value: "foo")
         container.register(identifier: 1, value: "bar")
         container.register(identifier: 2, value: "baz")
@@ -128,9 +127,20 @@ final class FusionTest: XCTestCase {
         XCTAssertEqual(string3, "baz")
     }
     
-    func testThrowing() {
+    func testThrowing() throws {
+        container.register(value: 1)
+        XCTAssertEqual(try container.resolveThrowing(Int.self), 1)
         XCTAssertThrowsError(try container.resolveThrowing(String.self))
         XCTAssertThrowsError(try Container.resolveThrowing(String.self))
+    }
+    
+    func testStatic() throws {
+        Container.register(value: 1)
+        Container.register { "\($0.resolveAssert(Int.self))" }
+        XCTAssertNil(Container.resolve(Bool.self))
+        XCTAssertEqual(Container.resolve(String.self), "1")
+        XCTAssertEqual(try Container.resolveThrowing(Int.self), 1)
+        XCTAssertEqual(Container.resolveAssert(String.self), "1")
     }
     
     func testDebug() {
@@ -153,7 +163,7 @@ final class FusionTest: XCTestCase {
     }
 }
 
-private struct TestingDefault {
+private final class TestingDefault {
     @Inject var string: String
     @Inject var int: Int
 }

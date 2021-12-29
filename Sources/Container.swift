@@ -2,13 +2,10 @@ import Foundation
 
 /// A container from which services should be registered and resolved.
 public final class Container: CustomDebugStringConvertible {
-    
     /// Create a value of a service.
     public typealias Factory<T> = () -> T
-
     /// Create a value of a service using the given container.
     public typealias ContainerFactory<T> = (Container) -> T
-
     /// The caching behavior for a factory.
     public enum ResolveBehavior: String {
         /// A new instance should be created at every `.resolve(...)`.
@@ -152,7 +149,7 @@ public final class Container: CustomDebugStringConvertible {
     ///   - factory: The factory, that's passed a container, for creating a
     ///     value when resolving.
     public static func register<T>(_ behavior: ResolveBehavior = .transient, identifier: AnyHashable? = nil, as type: T.Type = T.self, factory: @escaping ContainerFactory<T>) {
-        main.register(behavior, identifier: identifier, value: factory)
+        main.register(behavior, identifier: identifier, factory: factory)
     }
     
     /// Register a service to the main container.
