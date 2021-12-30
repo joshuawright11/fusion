@@ -76,31 +76,31 @@ public final class Container: CustomDebugStringConvertible {
         self.parent = parent
     }
     
-    // MARK: - Register
+    // MARK: - Binding
     
-    /// Register a service to this container.
+    /// Bind a service to this container.
     ///
     /// - Parameters:
     ///   - behavior: The behavior to resolve the service with. Defaults to
     ///     `transient`.
-    ///   - identifier: An optional identifier to register the service with.
-    ///   - type: The type to register the service as.
+    ///   - type: The type to bind the service as.
+    ///   - identifier: An optional identifier to bind the service with.
     ///   - factory: The factory, that's passed a container, for creating a
     ///     value when resolving.
-    public func register<T>(_ behavior: ResolveBehavior = .transient, identifier: AnyHashable? = nil, as type: T.Type = T.self, factory: @escaping ContainerFactory<T>) {
+    public func bind<T>(_ behavior: ResolveBehavior = .transient, to type: T.Type = T.self, identifier: AnyHashable? = nil, factory: @escaping ContainerFactory<T>) {
         storage[Key(type: type, identifier: identifier)] = Entry(behavior: behavior, factory: factory)
     }
     
-    /// Register a service to this container.
+    /// Bind a service to this container.
     ///
     /// - Parameters:
     ///   - behavior: The behavior to resolve the service with. Defaults to
     ///     `transient`.
-    ///   - identifier: An optional identifier to register the service with.
-    ///   - type: The type to register the service as.
+    ///   - type: The type to bind the service as.
+    ///   - identifier: An optional identifier to bind the service with.
     ///   - factory: The factory for creating a value when resolving.
-    public func register<T>(_ behavior: ResolveBehavior = .transient, identifier: AnyHashable? = nil, as type: T.Type = T.self, value: @escaping @autoclosure Factory<T>) {
-        register(behavior, identifier: identifier, as: type) { _ in value() }
+    public func bind<T>(_ behavior: ResolveBehavior = .transient, to type: T.Type = T.self, identifier: AnyHashable? = nil, value: @escaping @autoclosure Factory<T>) {
+        bind(behavior, to: type, identifier: identifier) { _ in value() }
     }
     
     // MARK: - Resolve
@@ -144,12 +144,12 @@ public final class Container: CustomDebugStringConvertible {
     /// - Parameters:
     ///   - behavior: The behavior to resolve the service with. Defaults to
     ///     `transient`.
-    ///   - identifier: An optional identifier to register the service with.
-    ///   - type: The type to register the service as.
+    ///   - identifier: An optional identifier to bind the service with.
+    ///   - type: The type to bind the service as.
     ///   - factory: The factory, that's passed a container, for creating a
     ///     value when resolving.
-    public static func register<T>(_ behavior: ResolveBehavior = .transient, identifier: AnyHashable? = nil, as type: T.Type = T.self, factory: @escaping ContainerFactory<T>) {
-        main.register(behavior, identifier: identifier, factory: factory)
+    public static func bind<T>(_ behavior: ResolveBehavior = .transient, to type: T.Type = T.self, identifier: AnyHashable? = nil, factory: @escaping ContainerFactory<T>) {
+        main.bind(behavior, identifier: identifier, factory: factory)
     }
     
     /// Register a service to the main container.
@@ -157,11 +157,11 @@ public final class Container: CustomDebugStringConvertible {
     /// - Parameters:
     ///   - behavior: The behavior to resolve the service with. Defaults to
     ///     `transient`.
-    ///   - identifier: An optional identifier to register the service with.
-    ///   - type: The type to register the service as.
+    ///   - identifier: An optional identifier to bind the service with.
+    ///   - type: The type to bind the service as.
     ///   - factory: The factory for creating a value when resolving.
-    public static func register<T>(_ behavior: ResolveBehavior = .transient, identifier: AnyHashable? = nil, as type: T.Type = T.self, value: @escaping @autoclosure Factory<T>) {
-        main.register(behavior, identifier: identifier, value: value())
+    public static func bind<T>(_ behavior: ResolveBehavior = .transient, to type: T.Type = T.self, identifier: AnyHashable? = nil, value: @escaping @autoclosure Factory<T>) {
+        main.bind(behavior, identifier: identifier, value: value())
     }
     
     /// Returns an instance of a service from the main container, returning nil

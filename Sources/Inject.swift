@@ -1,6 +1,6 @@
 /// Provides a convenient `@propertyWrapper` for injecting services to
 /// a type. By default, resolves services from the global container
-/// (`Container.default`) but if the enclosing type conforms to
+/// (`Container.main`) but if the enclosing type conforms to
 /// `Containerized` services are resolved from
 /// `EnclosingType.container`.
 @propertyWrapper
@@ -20,6 +20,11 @@ public final class Inject<Service> {
     
     /// Create the property wrapper with an identifier.
     public init(_ identifier: AnyHashable) {
+        self.identifier = identifier
+    }
+    
+    /// Create the property wrapper with an identifier.
+    public init(identifier: AnyHashable) {
         self.identifier = identifier
     }
     
