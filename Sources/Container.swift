@@ -19,7 +19,12 @@ public final class Container: CustomDebugStringConvertible {
         let identifier: AnyHashable?
         
         func hash(into hasher: inout Hasher) {
-            hasher.combine(identifier)
+            if let identifier = identifier {
+                hasher.combine(AnyHashable(identifier))
+            } else {
+                hasher.combine(AnyHashable(nil as AnyHashable?))
+            }
+            
             hasher.combine("\(type)")
         }
         
@@ -28,21 +33,27 @@ public final class Container: CustomDebugStringConvertible {
         }
     }
     
-    private struct Entry {
+    private final class Entry {
         let behavior: ResolveBehavior
         let factory: (Container) -> Any
         var cachedValue: Any?
         
-        mutating func value<T>(in container: Container) -> T {
+        init(behavior: Container.ResolveBehavior, factory: @escaping (Container) -> Any) {
+            self.behavior = behavior
+            self.factory = factory
+            self.cachedValue = nil
+        }
+        
+        func value<T>(in container: Container) -> T {
             guard let value = valueAny(in: container) as? T else { preconditionFailure("Internal storage type mismatch.") }
             return value
         }
         
-        fileprivate mutating func valueAny(in container: Container) -> Any {
+        private func valueAny(in container: Container) -> Any {
             cachedValue ?? create(in: container)
         }
         
-        private mutating func create(in container: Container) -> Any {
+        private func create(in container: Container) -> Any {
             let value = factory(container)
             if behavior == .singleton { cachedValue = value }
             return value
@@ -54,19 +65,7 @@ public final class Container: CustomDebugStringConvertible {
     
     private var parent: Container?
     private let lock = NSRecursiveLock()
-    private var _storage: [Key: Entry] = [:]
-    private var storage: [Key: Entry] {
-        get {
-            lock.lock()
-            defer { lock.unlock() }
-            return _storage
-        }
-        set {
-            lock.lock()
-            defer { lock.unlock() }
-            _storage = newValue
-        }
-    }
+    private var storage: [Key: Entry] = [:]
     
     /// Initialize a container with an optional parent `Container`.
     ///
@@ -88,7 +87,9 @@ public final class Container: CustomDebugStringConvertible {
     ///   - factory: The factory, that's passed a container, for creating a
     ///     value when resolving.
     public func bind<T>(_ behavior: ResolveBehavior = .transient, to type: T.Type = T.self, identifier: AnyHashable? = nil, factory: @escaping ContainerFactory<T>) {
+        lock.lock()
         storage[Key(type: type, identifier: identifier)] = Entry(behavior: behavior, factory: factory)
+        lock.unlock()
     }
     
     /// Bind a service to this container.
@@ -112,7 +113,10 @@ public final class Container: CustomDebugStringConvertible {
     ///   - type: The service type to resolve.
     ///   - identifier: An optional identifier to resolve with.
     public func resolve<T>(_ type: T.Type = T.self, identifier: AnyHashable? = nil) -> T? {
-        storage[Key(type: type, identifier: identifier)]?.value(in: self) ?? parent?.resolve(identifier: identifier)
+        lock.lock()
+        let value: T? = storage[Key(type: type, identifier: identifier)]?.value(in: self)
+        lock.unlock()
+        return value ?? parent?.resolve(identifier: identifier)
     }
     
     /// Returns an instance of a service, throwing a `FusionError` if the
@@ -202,10 +206,10 @@ public final class Container: CustomDebugStringConvertible {
             string.append("<nothing registered>")
         } else {
             let entryStrings: [String] = storage.map { key, entry in
-                var entry = entry
                 var keyString = "\(key.type)"
                 if let identifier = key.identifier { keyString.append(" (\(identifier.base))") }
-                let entryString = "\(entry.valueAny(in: self)) (\(entry.behavior.rawValue))"
+                let value: Any = entry.value(in: self)
+                let entryString = "\(value) (\(entry.behavior.rawValue))"
                 return "- \(keyString): \(entryString)"
             }
             
