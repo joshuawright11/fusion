@@ -137,7 +137,7 @@ public final class Container: CustomDebugStringConvertible {
     ///   - type: The service type to resolve.
     ///   - identifier: An optional identifier to resolve with.
     public func resolveAssert<T>(_ type: T.Type = T.self, identifier: AnyHashable? = nil) -> T {
-        guard let unwrapped: T = resolve(identifier: identifier) else { preconditionFailure("Unable to resolve service of type \(T.self)! Perhaps it isn't registered?") }
+        guard let unwrapped: T = resolve(identifier: identifier) else { preconditionFailure("Unable to resolve service of type \(T.self) with identifier \(identifier.map { "\($0)" } ?? "nil")! Perhaps it isn't registered?") }
         return unwrapped
     }
     
