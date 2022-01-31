@@ -1,3 +1,11 @@
+<p align="center"><a href="https://github.com/alchemy-swift/fusion"><img src="https://user-images.githubusercontent.com/6025554/151728294-6185c3ed-ab54-4174-a376-4b2923b647d2.png" width="400"></a></p>
+
+<p align="center">
+<a href="https://swift.org"><img src="https://img.shields.io/badge/Swift-5.3-orange.svg" alt="Swift Version"></a>
+<a href="https://github.com/alchemy-swift/alchemy/fusion"><img src="https://img.shields.io/github/release/alchemy-swift/fusion.svg" alt="Latest Release"></a>
+<a href="https://github.com/alchemy-swift/alchemy/blob/main/LICENSE"><img src="https://img.shields.io/github/license/alchemy-swift/alchemy.svg" alt="License"></a>
+</p>
+
 # Fusion
 
 Fusion is a lightweight dependency injection library for Swift. It uses property wrappers to make injection a breeze so you can keep your code testable and modular in modern, Swifty style.
