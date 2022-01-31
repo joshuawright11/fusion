@@ -1,184 +1,256 @@
-# Fusion: Services & Dependency Injection
+# Fusion
 
-- [Why Use Dependency Injection?](#why-use-dependency-injection-)
-- [Registering & Resolving Services](#registering---resolving-services)
-  * [Resolving with `@Inject`](#resolving-with---inject-)
-  * [Cross service dependencies](#cross-service-dependencies)
-  * [Optional Resolving](#optional-resolving)
-- [Service Types](#service-types)
-  * [Singleton Services](#singleton-services)
-  * [Identified Singletons / Multitons](#identified-singletons---multitons)
-- [Advanced Container Usage](#advanced-container-usage)
-  * [Creating a Custom Container](#creating-a-custom-container)
-  * [Creating a Child Container](#creating-a-child-container)
-  * [Accessing Custom Containers from `@Inject`](#accessing-custom-containers-from---inject-)
-  * [Service Automatically Registered to `Container.default`](#service-automatically-registered-to--containerglobal-)
-  * [`Services`](#-services-)
-- [Using Fusion in non-server targets](#using-fusion-in-non-server-targets)
-
-Alchemy uses a helper library called `Fusion` for managing dependencies and injecting them. "Dependency Injection" is a phrase that refers to "injecting" concrete implementations of abstract service types typically through initializers or properties. Fusion can also be added to non-Alchemy targets, such as iOS or macOS apps.
+Fusion is a lightweight dependency injection library for Swift. It uses property wrappers to make injection a breeze so you can keep your code testable and modular in modern, Swifty style.
 
 ## Why Use Dependency Injection?
 
+"Dependency Injection" is a fancy phrase that refers to providing concrete implementations of abstract service types.
+
 DI helps keep your code modular, testable and maintainable. It lets you define services in one place so that you may easily swap them for other implementations down the road or during tests.
 
-## Registering & Resolving Services
+## Installation
 
-"Services" (a fancy word for an abstract interface, often a protocol) are registered and resolved from `Container`s. By default there is a global container, `Container.default`, that you can use to register & resolve services from.
-
-For example, consider an abstract type, `protocol Database`, that is implemented by a concrete type, `class PostgresDatabase: Database`. You could register the `PostgresDatabase` type to `Database` via
+Install with the Swift Package Manager.
 
 ```swift
-Container.default.register(Database.self) { _ in
-    PostgresDatabase(...)
+.package(url: "https://github.com/alchemy-swift/fusion", from: "0.4.0")
+```
+
+## A Simple Intro: Logging
+
+If you're familiar with dependency injection or would rather just see everything you can do with Fusion, feel free to skip to [Usage](#usage).
+
+Consider an example of using Fusion to make your code modular and testable.
+
+Let's say that you are creating an app and would like to log all logs to a remote log store. You might create an abstract interface for the logger using a protocol.
+
+```swift
+protocol Logger {
+    func log(_ text: String)
 }
 ```
 
-Whenever you want to access the database; you can access it through `Container.resolve`.
+Next, create a concrete implementation that sends the logs to a remote store.
 
 ```swift
-let database = Container.default.resolve(Database.self)
-```
-
-This makes it easy to swap out the Database for another implementation, all you'd need to do is change the register closure.
-
-```swift
-Container.default.register(Database.self) { _ in
-    MySQLDatabase(...)
+struct RemoteLogger: Logger {
+    func log(_ text: String) { ... }
 }
 ```
 
-### Resolving with `@Inject`
-
-You may also resolve a service with the `@Inject` property wrapper. The instance of the service will be resolved via the global container (`Container.default`) the first time this property is accessed.
+You can now "bind" this type to your app's main container. This just means your telling the container "when I ask for a `Logger`, give me a `RemoteLogger`".
 
 ```swift
-@Inject var database: Database
+Container.main.bind(Logger.self, value: RemoteLogger())
 ```
 
-### Cross service dependencies
-
-Sometimes, services rely on other services to function. You may resolve other services from the `Container` parameter in the register closure.
+Note that for your convenience, you can just call `bind` and `resolve` as static functions on `Container` which will use the `main` container.
 
 ```swift
-Container.register(Logger.self) { ... }
+Container.bind(Logger.self, value: RemoteLogger())
+```
 
-Container.register(Database.self) { container in
-    let logger = container.resolve(Logger.self)
-    return PostgresDatabase(..., logger)
+Now, whenever you need to log something, just use the `@Inject` property wrapper to "inject" your service.
+
+```swift
+struct CreateAccountView: View {
+    @Inject var logger: Logger
+
+    ...
+
+    func createAccount(for email: String) {
+        logger.log("Creating an account for \(email).")
+    }
 }
 ```
 
-### Optional Resolving
+Simple. Your logs will be properly sent to your remote logger. But let's say you want to run unit tests that test creating a user account. You probably don't want to spam up your remote logger with a bunch of dummy logs. Instead it would make more sense just to log everything to the console so you can debug if necessary. 
 
-By default, `.resolve` will `fatalError` if you try to resolve a service that isn't registered. This helps ensure that your program won't make it out of testing with you forgetting to register any services.
+But this means that you'll need to provide a different instance of `Logger` everywhere you are using it, which could be hundreds of places. Fortunately, since you're using dependency injecion, this is a piece of cake.
 
-That being said, there may be special cases where you want to optionally resolve a service; returning `nil` if it isn't registered. For this, you may use `Container.resolveOptional`.
-
-```swift
-let optionalDatabase: Database? = Container.resolveOptional(Database.self)
-```
-
-**Note**: Optional resolving is not available when injecting via `@Inject`.
-
-## Service Types
-
-### Singleton Services
-
-By default, services registered are "transient" meaning that their register closure is called each time it's resolved. 
-
-Sometimes, you'll want only a single instance of this service being passed around (a singleton). In this case, you can use `.register(singleton:)` to register your service.
+First, create a new `Logger` that logs to the console. Then, at the beginning of a test or in the `setup()` function of the test case, bind a `ConsoleLogger` to `Logger` in your app's container.
 
 ```swift
-Container.default.register(singleton: Database.self) { _ in
-    PostgresDatabase(...)
+struct ConsoleLogger: Logger { ... }
+
+func testCreateAccount() {
+    Container.bind(Logger.self, value: ConsoleLogger())
+
+    let view = CreateAccountView()
+    // run some test logic
 }
 ```
 
-A singleton instance is resolved once, then cached in it's `Container` to be injected on future calls to `resolve`.
+Now, any calls to an `@Inject`ed `Logger`s during tests will be sent to `ConsoleLogger` instead of `RemoteLogger` and your remote log store will stay nice and tidy. This same pattern can be used to easily swap your production `Logger` out for a different implementation down the road such as a `FileLogger` or `SlackLogger`.
 
-### Identified Singletons / Multitons
+## Usage
 
-Sometimes you might want multiple instances of a singleton, each tied to a specific identifier (multiton / identified singleton). You can do this by passing an identifier when registering the singleton.
+Now that you're up to speed on Dependency Injection and the basics of Fusion, here's everything it's API offers.
 
-Perhaps you are working with two databases, one main one and one for writing logs to. You might register them like so,
+Services are bound to and resolved from `Container`s. Fusion comes with a main container, `Container.main`, but you can also create your own custom containers.
+
+### Binding
+
+You can register or "bind" an instance to a type using the `bind(value:)` which takes a value or `bind(factory:)` which takes a closure.
 
 ```swift
-enum DatabaseType: String {
-    case main
-    case logs
-}
+Container.main.bind(Logger.self, value: RemoteLogger()) // A `RemoteLogger()` will be returned when resolving `Logger.self`.
 
-Container.register(singleton: Database, DatabaseType.main) { _ in
-    PostgresDatabase(mainConfiguration)
-}
-
-Container.register(singleton: Database, DatabaseType.logs) { _ in
-    PostgresDatabase(logConfiguration)
+Container.main.bind(Logger.self, factory: { container in
+    return RemoteLogger()
 }
 ```
 
-These can now be resolved by passing an identifier to the resolve function or the `@Inject` property wrapper.
+You don't need to specify the type if it's the same as the argument for value.
 
 ```swift
-// Via `.resolve`
-let mainDB = Container.resolve(Database.self, identifier: DatabaseType.main)
-
-// Via `@Inject`
-@Inject(DatabaseType.main)
-var mainDB: Database
+Container.main.bind(value: "Hello, world!") // "Hello, world" will be returned when resolving `String.self`.
 ```
 
-## Advanced Container Usage
+For convenience, there are static functions on `Container` that bind to `Container.main`.
+
+```swift
+// Equivalent to the functions above
+
+Container.bind(Logger.self, value: RemoteLogger())
+
+Container.bind(value: "Hello, world!")
+```
+
+#### Cross service dependencies
+
+If you need to access a different dependency when resolving a dependency, use `bind(factory:)` and access the provided container parameter.
+
+```swift
+Container.bind(Database.self) { container in
+    PostgresDatabase(logger: container.resolve(Logger.self))
+}
+```
+
+#### Singletons
+
+By default, your services are _transient_, meaning they are resolved fresh each time they are injected. If you'd prefer the service to be resolved only once, you may specify so by passing `.singleton` as the first argument to `bind()`.
+
+```swift
+// a transient service; factory called each time
+Container.bind(value: UUID())
+@Inject var uuid: UUID // 15dc5b79-774d-4ec9-a9c5-7cc8b31b7a4a
+@Inject var uuid: UUID // 2b43da13-ca2e-4d83-ad19-9fb879afe522
+@Inject var uuid: UUID // e4d120a4-58ce-4313-8709-1eba09165c57
+
+// a singleton service; factory called once and the result is returned for all subsequent resolves
+Container.bind(.singleton, value: UUID())
+@Inject var uuid: UUID // 9b0a42e5-9205-4c98-8650-7010b7eaa401
+@Inject var uuid: UUID // 9b0a42e5-9205-4c98-8650-7010b7eaa401
+@Inject var uuid: UUID // 9b0a42e5-9205-4c98-8650-7010b7eaa401
+```
+
+**Note** the `value` in `bind(value:)` is marked as `@autoclosure` which is why the transient service returned a new value each time it was resolved.
+
+If your service has dependencies, you can bind it as a singleton in the same way.
+
+```swift
+Container.bind(.singleton, to: JobQueue.self) { container in
+    DatabaseQueue(database: container.resolve(Database.self))
+}
+```
+
+#### Identifiers
+
+Sometimes, you may have multiple factories of the same service. You can correlate each factory to an identifier by passing anything hashable to the `id:` parameter of `bind()`.
+
+```swift
+Container.bind(id: "a", value: "foo")
+Container.bind(id: "b", value: "bar")
+```
+
+You may then inject a specific instance by passing the identifier to `@Inject`.
+
+```swift
+@Inject("a") var first: String  // foo
+@Inject("b") var second: String // bar
+```
+
+### Resolving
+
+Once you bind a service, you may resolve it directly from the container or with the `@Inject` property wrapper. Note that `@Inject` force unwraps the injected value, and will crash if it isn't bound.
+
+```swift
+let log: Logger? = Container.resolve(Logger.self)
+
+@Inject var log: Logger
+```
+
+#### Resolving with identifiers
+
+If you bound your service to an identifier, you may inject that specific service by passing the identifier.
+
+```swift
+let log = Container.resolve(Logger.self, id: "slack")
+
+@Inject("slack") var log: Logger
+```
+
+#### Assert resolving
+
+`Container.resolve()` returns an optional type that will be nil if the service wasn't registered. If you'd prefer not to deal with an optional, you may call `resolveAssert()` which will return a value or end execution if the value isn't registered. Under the hood, this is what `@Inject` uses.
+
+```swift
+let log: Logger = Container.resolveAssert(Logger.self)
+
+let slack: Logger = Container.resolveAssert(Logger.self, id: "slack")
+```
+
+#### Throwing resolving
+
+Alternatively, you may use `resolveThrowing()` which returns a value or throws a `FusionError.notRegistered` if the service wasn't registered.
+
+```swift
+let log: Logger = try Container.resolveThrowing(Logger.self)
+```
+
+### Advanced `Container` usage
 
 In many cases, only using `Container.default` will be enough for what you're trying to do. There are some cases however, where you'd like to further modularize your code with custom containers.
 
-### Creating a Custom Container
+#### Custom containers
 
-You easily create your own containers.
+You easily create and manage your own containers.
 
 ```swift
 let myContainer = Container()
-myContainer.register(String.self) { 
-    "Hello from my container!" 
-}
+myContainer.register(value: "Hello from my container!")
 
-let string = myContainer.resolve(String.self)
-print(string) // "Hello from my container!"
+let string = myContainer.resolve(String.self) // "Hello from my container!"
 ```
 
-**Note**: All closures and cached singletons are tied to the lifecycle of their container. When your custom container is deallocated, so will all it's closures and cached singletons.
+#### Child containers
 
-### Creating a Child Container
-
-You can give a container a parent container. This means that if the child container doesn't have a service registered to it, `resolving` it will attempt to register the service from the parent container.
+You can give a container a "parent" container. This means that if the child container doesn't have a service type bound to it, `resolving` it will attempt to resolve the service from the parent container.
 
 ```swift
-Container.register(Int.self) {
-    0
-}
+let parent = Container()
+let child = Container(parent: parent)
 
-let childContainer = Container(parent: .global)
-childContainer.register(String.self) {
-    "foo"
-}
+parent.bind(value: 1)
+child.bind(value: "foo")
 
 // "foo"
-let string = childContainer.resolve(String.self)
+let string = child.resolve(String.self)
 
-// 0; inherited from parent
-let int = childContainer.resolve(Int.self)
+// 1; inherited from `parent`
+let int = child.resolve(Int.self)
 
-// fatalError; parents do not have access to their children's services
-let int = Container.default.resolve(String.self)
+// nil; parents do not have access to their children's services.
+let string = parent.resolve(String.self)
 ```
 
-### Accessing Custom Containers from `@Inject`
+#### `@Inject`ing from a custom container
 
 By default, `@Inject` resolves services from the global container. If you'd like to inject from a custom container, you must conform the enclosing type to `Containerized`, which requires a `var container: Container { get }`.
 
 ```swift
-class MyEnclosingType: Containerized {
+final class MyEnclosingType: Containerized {
     let container: Container
 
     @Inject var string: String
@@ -190,52 +262,10 @@ class MyEnclosingType: Containerized {
 }
 
 let container = Container()
-container.register(String.self) { "Howdy" }
-container.register(Int.self) { 42 }
+container.register(value: "Howdy")
+container.register(value: 42)
 
 let myType = MyEnclosingType(container: container)
-print(myType.string) // "Howdy"
-print(myType.int) // 42
+myType.string // "Howdy"
+myType.int // 42
 ```
-
-### Services Automatically Registered to `Container.default`
-
-There are a few types to be aware of that Alchemy automatically injects into the global container during setup. These can be accessed via `@Inject` or `Container.resolve` anywhere in your app.
-
-- `Router`: the router that will handle all incoming requests.
-- `EventLoopGroup`: the group of `EventLoop`s to which your application runs requests on.
-
-### `Services`
-
-`Alchemy` contains a `Services` type providing convenient static variables for injecting commonly used services from the global container.
-
-```swift
-let scheduler = Services.scheduler
-let eventLoopGroup = Services.eventLoopGroup
-```
-
-You may also add custom static properties to it at your own convenience:
-```swift
-extension Services {
-    static var someType: SomeType {
-        Container.default.resolve(SomeType.self)
-    }
-}
-```
-
-**Note**: Many `QueryBuilder` & `Rune ORM` APIs default to running queries on `Services.db`. Be sure to register a singleton global database in your `Application.setup` to use them.
-
-**Other Note**: You can mock many of these common services in tests by calling `Services.mock()` in your test case `setUp()`.
-
-```swift
-// In Application.setup
-
-Container.register(singleton: Database.self) { _ in
-    PostgresDatabase(...)
-}
-```
-
-## Using Fusion in non-server targets
-
-When you `import Alchemy`, you automatically import Fusion. If you'd like to use Fusion in a non-server target, you can add `Fusion` as a dependency through SPM and import it via `import Fusion`.
-
