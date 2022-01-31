@@ -11,8 +11,7 @@
 /// final class UsersController: Containerized {
 ///     let container = Container()
 ///
-///     // Will be resolved from `self.container` instead of
-///     // `Container.default`
+///     // Will be resolved from `self.container` instead of `Container.default`
 ///     @Inject var database: Database
 /// }
 /// ```
