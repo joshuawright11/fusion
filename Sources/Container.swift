@@ -83,7 +83,7 @@ public final class Container: CustomDebugStringConvertible {
     ///   - behavior: The behavior to resolve the service with. Defaults to
     ///     `transient`.
     ///   - type: The type to bind the service as.
-    ///   - identifier: An optional identifier to bind the service with.
+    ///   - id: An optional identifier to bind the service with.
     ///   - factory: The factory, that's passed a container, for creating a
     ///     value when resolving.
     public func bind<T>(_ behavior: ResolveBehavior = .transient, to type: T.Type = T.self, id: AnyHashable? = nil, factory: @escaping ContainerFactory<T>) {
@@ -98,7 +98,7 @@ public final class Container: CustomDebugStringConvertible {
     ///   - behavior: The behavior to resolve the service with. Defaults to
     ///     `transient`.
     ///   - type: The type to bind the service as.
-    ///   - identifier: An optional identifier to bind the service with.
+    ///   - id: An optional identifier to bind the service with.
     ///   - factory: The factory for creating a value when resolving.
     public func bind<T>(_ behavior: ResolveBehavior = .transient, to type: T.Type = T.self, id: AnyHashable? = nil, value: @escaping @autoclosure Factory<T>) {
         bind(behavior, to: type, id: id) { _ in value() }
@@ -111,7 +111,7 @@ public final class Container: CustomDebugStringConvertible {
     /// 
     /// - Parameters:
     ///   - type: The service type to resolve.
-    ///   - identifier: An optional identifier to resolve with.
+    ///   - id: An optional identifier to resolve with.
     public func resolve<T>(_ type: T.Type = T.self, id: AnyHashable? = nil) -> T? {
         lock.lock()
         let value: T? = storage[Key(type: type, id: id)]?.value(in: self)
@@ -124,7 +124,7 @@ public final class Container: CustomDebugStringConvertible {
     ///
     /// - Parameters:
     ///   - type: The service type to resolve.
-    ///   - identifier: An optional identifier to resolve with.
+    ///   - id: An optional identifier to resolve with.
     public func resolveThrowing<T>(_ type: T.Type = T.self, id: AnyHashable? = nil) throws -> T {
         guard let unwrapped: T = resolve(id: id) else { throw FusionError.notRegistered(type: T.self, id: id) }
         return unwrapped
@@ -135,7 +135,7 @@ public final class Container: CustomDebugStringConvertible {
     ///
     /// - Parameters:
     ///   - type: The service type to resolve.
-    ///   - identifier: An optional identifier to resolve with.
+    ///   - id: An optional identifier to resolve with.
     public func resolveAssert<T>(_ type: T.Type = T.self, id: AnyHashable? = nil) -> T {
         guard let unwrapped: T = resolve(id: id) else { preconditionFailure("Unable to resolve service of type \(T.self) with identifier \(id.map { "\($0)" } ?? "nil")! Perhaps it isn't registered?") }
         return unwrapped
@@ -148,8 +148,8 @@ public final class Container: CustomDebugStringConvertible {
     /// - Parameters:
     ///   - behavior: The behavior to resolve the service with. Defaults to
     ///     `transient`.
-    ///   - identifier: An optional identifier to bind the service with.
     ///   - type: The type to bind the service as.
+    ///   - id: An optional identifier to bind the service with.
     ///   - factory: The factory, that's passed a container, for creating a
     ///     value when resolving.
     public static func bind<T>(_ behavior: ResolveBehavior = .transient, to type: T.Type = T.self, id: AnyHashable? = nil, factory: @escaping ContainerFactory<T>) {
@@ -183,7 +183,7 @@ public final class Container: CustomDebugStringConvertible {
     ///
     /// - Parameters:
     ///   - type: The service type to resolve.
-    ///   - identifier: An optional identifier to resolve with.
+    ///   - id: An optional identifier to resolve with.
     public static func resolveThrowing<T>(_ type: T.Type = T.self, id: AnyHashable? = nil) throws -> T {
         try main.resolveThrowing(id: id)
     }
@@ -193,7 +193,7 @@ public final class Container: CustomDebugStringConvertible {
     ///
     /// - Parameters:
     ///   - type: The service type to resolve.
-    ///   - identifier: An optional identifier to resolve with.
+    ///   - id: An optional identifier to resolve with.
     public static func resolveAssert<T>(_ type: T.Type = T.self, id: AnyHashable? = nil) -> T {
         main.resolveAssert(id: id)
     }
