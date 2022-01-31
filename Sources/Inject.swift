@@ -8,7 +8,7 @@ public final class Inject<Service> {
     /// An optional identifier that may be associated with the service
     /// this property wrapper is injecting. Used for storing any
     /// identifiers of a service.
-    private var identifier: AnyHashable?
+    private var id: AnyHashable?
     
     /// The service is injected each time this is accessed.
     public var wrappedValue: Service {
@@ -19,13 +19,13 @@ public final class Inject<Service> {
     public init() {}
     
     /// Create the property wrapper with an identifier.
-    public init(_ identifier: AnyHashable) {
-        self.identifier = identifier
+    public init(_ id: AnyHashable) {
+        self.id = id
     }
     
     /// Create the property wrapper with an identifier.
-    public init(identifier: AnyHashable) {
-        self.identifier = identifier
+    public init(id: AnyHashable) {
+        self.id = id
     }
     
     /// Resolves an instance of `Service` from the given container.
@@ -34,7 +34,7 @@ public final class Inject<Service> {
     ///   from.
     /// - Returns: An instance of `Service` resolved from `container`.
     private func resolve(in container: Container) -> Service {
-        container.resolveAssert(identifier: identifier)
+        container.resolveAssert(id: id)
     }
     
     /// Resolves the value, resolving from the specified container if

@@ -16,11 +16,11 @@ public final class Container: CustomDebugStringConvertible {
     
     private struct Key: Hashable {
         let type: Any.Type
-        let identifier: AnyHashable?
+        let id: AnyHashable?
         
         func hash(into hasher: inout Hasher) {
-            if let identifier = identifier {
-                hasher.combine(AnyHashable(identifier))
+            if let id = id {
+                hasher.combine(AnyHashable(id))
             } else {
                 hasher.combine(AnyHashable(nil as AnyHashable?))
             }
@@ -86,9 +86,9 @@ public final class Container: CustomDebugStringConvertible {
     ///   - identifier: An optional identifier to bind the service with.
     ///   - factory: The factory, that's passed a container, for creating a
     ///     value when resolving.
-    public func bind<T>(_ behavior: ResolveBehavior = .transient, to type: T.Type = T.self, identifier: AnyHashable? = nil, factory: @escaping ContainerFactory<T>) {
+    public func bind<T>(_ behavior: ResolveBehavior = .transient, to type: T.Type = T.self, id: AnyHashable? = nil, factory: @escaping ContainerFactory<T>) {
         lock.lock()
-        storage[Key(type: type, identifier: identifier)] = Entry(behavior: behavior, factory: factory)
+        storage[Key(type: type, id: id)] = Entry(behavior: behavior, factory: factory)
         lock.unlock()
     }
     
@@ -100,8 +100,8 @@ public final class Container: CustomDebugStringConvertible {
     ///   - type: The type to bind the service as.
     ///   - identifier: An optional identifier to bind the service with.
     ///   - factory: The factory for creating a value when resolving.
-    public func bind<T>(_ behavior: ResolveBehavior = .transient, to type: T.Type = T.self, identifier: AnyHashable? = nil, value: @escaping @autoclosure Factory<T>) {
-        bind(behavior, to: type, identifier: identifier) { _ in value() }
+    public func bind<T>(_ behavior: ResolveBehavior = .transient, to type: T.Type = T.self, id: AnyHashable? = nil, value: @escaping @autoclosure Factory<T>) {
+        bind(behavior, to: type, id: id) { _ in value() }
     }
     
     // MARK: - Resolve
@@ -112,11 +112,11 @@ public final class Container: CustomDebugStringConvertible {
     /// - Parameters:
     ///   - type: The service type to resolve.
     ///   - identifier: An optional identifier to resolve with.
-    public func resolve<T>(_ type: T.Type = T.self, identifier: AnyHashable? = nil) -> T? {
+    public func resolve<T>(_ type: T.Type = T.self, id: AnyHashable? = nil) -> T? {
         lock.lock()
-        let value: T? = storage[Key(type: type, identifier: identifier)]?.value(in: self)
+        let value: T? = storage[Key(type: type, id: id)]?.value(in: self)
         lock.unlock()
-        return value ?? parent?.resolve(identifier: identifier)
+        return value ?? parent?.resolve(id: id)
     }
     
     /// Returns an instance of a service, throwing a `FusionError` if the
@@ -125,8 +125,8 @@ public final class Container: CustomDebugStringConvertible {
     /// - Parameters:
     ///   - type: The service type to resolve.
     ///   - identifier: An optional identifier to resolve with.
-    public func resolveThrowing<T>(_ type: T.Type = T.self, identifier: AnyHashable? = nil) throws -> T {
-        guard let unwrapped: T = resolve(identifier: identifier) else { throw FusionError.notRegistered(type: T.self, identifier: identifier) }
+    public func resolveThrowing<T>(_ type: T.Type = T.self, id: AnyHashable? = nil) throws -> T {
+        guard let unwrapped: T = resolve(id: id) else { throw FusionError.notRegistered(type: T.self, id: id) }
         return unwrapped
     }
     
@@ -136,8 +136,8 @@ public final class Container: CustomDebugStringConvertible {
     /// - Parameters:
     ///   - type: The service type to resolve.
     ///   - identifier: An optional identifier to resolve with.
-    public func resolveAssert<T>(_ type: T.Type = T.self, identifier: AnyHashable? = nil) -> T {
-        guard let unwrapped: T = resolve(identifier: identifier) else { preconditionFailure("Unable to resolve service of type \(T.self) with identifier \(identifier.map { "\($0)" } ?? "nil")! Perhaps it isn't registered?") }
+    public func resolveAssert<T>(_ type: T.Type = T.self, id: AnyHashable? = nil) -> T {
+        guard let unwrapped: T = resolve(id: id) else { preconditionFailure("Unable to resolve service of type \(T.self) with identifier \(id.map { "\($0)" } ?? "nil")! Perhaps it isn't registered?") }
         return unwrapped
     }
     
@@ -152,8 +152,8 @@ public final class Container: CustomDebugStringConvertible {
     ///   - type: The type to bind the service as.
     ///   - factory: The factory, that's passed a container, for creating a
     ///     value when resolving.
-    public static func bind<T>(_ behavior: ResolveBehavior = .transient, to type: T.Type = T.self, identifier: AnyHashable? = nil, factory: @escaping ContainerFactory<T>) {
-        main.bind(behavior, identifier: identifier, factory: factory)
+    public static func bind<T>(_ behavior: ResolveBehavior = .transient, to type: T.Type = T.self, id: AnyHashable? = nil, factory: @escaping ContainerFactory<T>) {
+        main.bind(behavior, id: id, factory: factory)
     }
     
     /// Register a service to the main container.
@@ -161,11 +161,11 @@ public final class Container: CustomDebugStringConvertible {
     /// - Parameters:
     ///   - behavior: The behavior to resolve the service with. Defaults to
     ///     `transient`.
-    ///   - identifier: An optional identifier to bind the service with.
+    ///   - id: An optional identifier to bind the service with.
     ///   - type: The type to bind the service as.
     ///   - factory: The factory for creating a value when resolving.
-    public static func bind<T>(_ behavior: ResolveBehavior = .transient, to type: T.Type = T.self, identifier: AnyHashable? = nil, value: @escaping @autoclosure Factory<T>) {
-        main.bind(behavior, identifier: identifier, value: value())
+    public static func bind<T>(_ behavior: ResolveBehavior = .transient, to type: T.Type = T.self, id: AnyHashable? = nil, value: @escaping @autoclosure Factory<T>) {
+        main.bind(behavior, id: id, value: value())
     }
     
     /// Returns an instance of a service from the main container, returning nil
@@ -173,9 +173,9 @@ public final class Container: CustomDebugStringConvertible {
     ///
     /// - Parameters:
     ///   - type: The service type to resolve.
-    ///   - identifier: An optional identifier to resolve with.
-    public static func resolve<T>(_ type: T.Type = T.self, identifier: AnyHashable? = nil) -> T? {
-        main.resolve(identifier: identifier)
+    ///   - id: An optional identifier to resolve with.
+    public static func resolve<T>(_ type: T.Type = T.self, id: AnyHashable? = nil) -> T? {
+        main.resolve(id: id)
     }
     
     /// Returns an instance of a service from the main container, throwing a
@@ -184,8 +184,8 @@ public final class Container: CustomDebugStringConvertible {
     /// - Parameters:
     ///   - type: The service type to resolve.
     ///   - identifier: An optional identifier to resolve with.
-    public static func resolveThrowing<T>(_ type: T.Type = T.self, identifier: AnyHashable? = nil) throws -> T {
-        try main.resolveThrowing(identifier: identifier)
+    public static func resolveThrowing<T>(_ type: T.Type = T.self, id: AnyHashable? = nil) throws -> T {
+        try main.resolveThrowing(id: id)
     }
     
     /// Returns an instance of a service from the main container, failing an
@@ -194,8 +194,8 @@ public final class Container: CustomDebugStringConvertible {
     /// - Parameters:
     ///   - type: The service type to resolve.
     ///   - identifier: An optional identifier to resolve with.
-    public static func resolveAssert<T>(_ type: T.Type = T.self, identifier: AnyHashable? = nil) -> T {
-        main.resolveAssert(identifier: identifier)
+    public static func resolveAssert<T>(_ type: T.Type = T.self, id: AnyHashable? = nil) -> T {
+        main.resolveAssert(id: id)
     }
     
     // MARK: - CustomDebugStringConvertible
@@ -207,7 +207,7 @@ public final class Container: CustomDebugStringConvertible {
         } else {
             let entryStrings: [String] = storage.map { key, entry in
                 var keyString = "\(key.type)"
-                if let identifier = key.identifier { keyString.append(" (\(identifier.base))") }
+                if let id = key.id { keyString.append(" (\(id.base))") }
                 let value: Any = entry.value(in: self)
                 let entryString = "\(value) (\(entry.behavior.rawValue))"
                 return "- \(keyString): \(entryString)"

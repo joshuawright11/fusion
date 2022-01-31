@@ -41,14 +41,14 @@ final class FusionTest: XCTestCase {
     func testSingletonIdentified() {
         let exp = expectation(description: "called 1x")
         exp.expectedFulfillmentCount = 1
-        container.bind(.singleton, to: String.self, identifier: "test") { _ in
+        container.bind(.singleton, to: String.self, id: "test") { _ in
             exp.fulfill()
             return "Testing3"
         }
         
         XCTAssertEqual(container.resolve(String.self), nil)
-        XCTAssertEqual(container.resolve(String.self, identifier: "foo"), nil)
-        XCTAssertEqual(container.resolve(String.self, identifier: "test"), "Testing3")
+        XCTAssertEqual(container.resolve(String.self, id: "foo"), nil)
+        XCTAssertEqual(container.resolve(String.self, id: "test"), "Testing3")
         waitForExpectations(timeout: 0)
     }
     
@@ -98,8 +98,8 @@ final class FusionTest: XCTestCase {
         let container = Container()
         container.bind(to: String.self) { _ in "Testing7" }
         container.bind(to: Int.self) { _ in 6 }
-        container.bind(.singleton, identifier: true) { _ in true }
-        container.bind(.singleton, identifier: false) { _ in false }
+        container.bind(.singleton, id: true) { _ in true }
+        container.bind(.singleton, id: false) { _ in false }
         
         let instance = TestingContainerized(container: container)
         XCTAssertEqual(instance.string, "Testing7")
@@ -109,14 +109,14 @@ final class FusionTest: XCTestCase {
     }
     
     func testProperlyCastNilToHashable() {
-        container.bind(.singleton, identifier: nil, value: "cat")
+        container.bind(.singleton, id: nil, value: "cat")
         XCTAssertEqual(container.resolve(String.self), "cat")
     }
     
     func testInject() {
         container.bind(value: "foo")
-        container.bind(identifier: 1, value: "bar")
-        container.bind(identifier: 2, value: "baz")
+        container.bind(id: 1, value: "bar")
+        container.bind(id: 2, value: "baz")
         
         @Inject    var string1: String
         @Inject(1) var string2: String
@@ -145,8 +145,8 @@ final class FusionTest: XCTestCase {
     
     func testDebug() {
         container.bind(.singleton, value: "foo")
-        container.bind(identifier: 1, value: 0)
-        container.bind(identifier: 2, value: false)
+        container.bind(id: 1, value: 0)
+        container.bind(id: 2, value: false)
         XCTAssertEqual(container.debugDescription, """
         *Container Entries*
         - Bool (2): false (transient)
