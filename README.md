@@ -49,13 +49,13 @@ struct RemoteLogger: Logger {
 You can now "bind" this type to your app's main container. This just means your telling the container "when I ask for a `Logger`, give me a `RemoteLogger`".
 
 ```swift
-Container.main.bind(Logger.self, value: RemoteLogger())
+Container.main.bind(to: Logger.self, value: RemoteLogger())
 ```
 
 Note that for your convenience, you can just call `bind` and `resolve` as static functions on `Container` which will use the `main` container.
 
 ```swift
-Container.bind(Logger.self, value: RemoteLogger())
+Container.bind(to: Logger.self, value: RemoteLogger())
 ```
 
 Now, whenever you need to log something, just use the `@Inject` property wrapper to "inject" your service.
@@ -82,7 +82,7 @@ First, create a new `Logger` that logs to the console. Then, at the beginning of
 struct ConsoleLogger: Logger { ... }
 
 func testCreateAccount() {
-    Container.bind(Logger.self, value: ConsoleLogger())
+    Container.bind(to: Logger.self, value: ConsoleLogger())
 
     let view = CreateAccountView()
     // run some test logic
@@ -102,9 +102,9 @@ Services are bound to and resolved from `Container`s. Fusion comes with a main c
 You can register or "bind" an instance to a type using the `bind(value:)` which takes a value or `bind(factory:)` which takes a closure.
 
 ```swift
-Container.main.bind(Logger.self, value: RemoteLogger()) // A `RemoteLogger()` will be returned when resolving `Logger.self`.
+Container.main.bind(to: Logger.self, value: RemoteLogger()) // A `RemoteLogger()` will be returned when resolving `Logger.self`.
 
-Container.main.bind(Logger.self, factory: { container in
+Container.main.bind(to: Logger.self, factory: { container in
     return RemoteLogger()
 }
 ```
@@ -120,7 +120,7 @@ For convenience, there are static functions on `Container` that bind to `Contain
 ```swift
 // Equivalent to the functions above
 
-Container.bind(Logger.self, value: RemoteLogger())
+Container.bind(to: Logger.self, value: RemoteLogger())
 
 Container.bind(value: "Hello, world!")
 ```
@@ -130,7 +130,7 @@ Container.bind(value: "Hello, world!")
 If you need to access a different dependency when resolving a dependency, use `bind(factory:)` and access the provided container parameter.
 
 ```swift
-Container.bind(Database.self) { container in
+Container.bind(to: Database.self) { container in
     PostgresDatabase(logger: container.resolve(Logger.self))
 }
 ```
