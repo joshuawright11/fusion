@@ -25,7 +25,7 @@ public final class Container: CustomDebugStringConvertible {
                 hasher.combine(AnyHashable(nil as AnyHashable?))
             }
             
-            hasher.combine("\(type)")
+            hasher.combine(String(reflecting: type))
         }
         
         static func == (lhs: Key, rhs: Key) -> Bool {
