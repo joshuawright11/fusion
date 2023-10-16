@@ -161,6 +161,18 @@ final class FusionTest: XCTestCase {
         <nothing registered>
         """)
     }
+    
+    func testUnbind() {
+        container.bind(.singleton, to: String.self, value: "foo")
+        XCTAssertEqual(container.resolve(String.self), "foo")
+        container.unbind(type: String.self)
+        XCTAssertNil(container.resolve(String.self))
+        
+        Container.bind(.singleton, to: String.self, value: "bar")
+        XCTAssertEqual(Container.resolve(String.self), "bar")
+        Container.unbind(type: String.self)
+        XCTAssertNil(Container.resolve(String.self))
+    }
 }
 
 private final class TestingDefault {

@@ -125,6 +125,14 @@ Container.bind(to: Logger.self, value: RemoteLogger())
 Container.bind(value: "Hello, world!")
 ```
 
+#### Unbinding
+
+In some cases you might need to `unbind` a service.
+
+```swift
+Container.unbind(type: Logger.self)
+```
+
 #### Cross service dependencies
 
 If you need to access a different dependency when resolving a dependency, use `bind(factory:)` and access the provided container parameter.

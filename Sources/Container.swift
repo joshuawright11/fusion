@@ -25,7 +25,7 @@ public final class Container: CustomDebugStringConvertible {
                 hasher.combine(AnyHashable(nil as AnyHashable?))
             }
             
-            hasher.combine("\(type)")
+            hasher.combine(String(reflecting: type))
         }
         
         static func == (lhs: Key, rhs: Key) -> Bool {
@@ -104,6 +104,17 @@ public final class Container: CustomDebugStringConvertible {
         bind(behavior, to: type, id: id) { _ in value() }
     }
     
+    /// Unbind a service from this container.
+    ///
+    /// - Parameters:
+    ///   - type: The type to unbind.
+    ///   - id: An optional identifier.
+    public func unbind<T>(type: T.Type = T.self, id: AnyHashable? = nil) {
+        lock.lock()
+        storage[Key(type: type, id: id)] = nil
+        lock.unlock()
+    }
+    
     // MARK: - Resolve
     
     /// Returns an instance of a service, returning nil if the service isn't
@@ -166,6 +177,15 @@ public final class Container: CustomDebugStringConvertible {
     ///   - factory: The factory for creating a value when resolving.
     public static func bind<T>(_ behavior: ResolveBehavior = .transient, to type: T.Type = T.self, id: AnyHashable? = nil, value: @escaping @autoclosure Factory<T>) {
         main.bind(behavior, id: id, value: value())
+    }
+    
+    /// Unregister a service from the main container.
+    ///
+    /// - Parameters:
+    ///   - type: The type to unbind.
+    ///   - id: An optional identifier.
+    public static func unbind<T>(type: T.Type = T.self, id: AnyHashable? = nil) {
+        main.unbind(type: type, id: id)
     }
     
     /// Returns an instance of a service from the main container, returning nil
