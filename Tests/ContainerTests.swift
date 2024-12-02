@@ -53,6 +53,7 @@ struct ContainerTests {
         #expect(Container.isPreview == false)
         #expect(Container.isDebug == true)
         #expect(Container.isSimulator == false)
+        #expect(Container.isDevice == true)
     }
 
     @Test func dependency() {
