@@ -2,8 +2,8 @@ import Foundation
 
 /// A container from which services are resolved.
 @dynamicMemberLookup
-public final class Container {
-    public enum Scope: Equatable {
+public final class Container: @unchecked Sendable {
+    public enum Scope: Equatable, Sendable {
         case id(String)
 
         public static let singleton = id("singleton")

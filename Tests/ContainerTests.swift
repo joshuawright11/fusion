@@ -9,12 +9,12 @@ struct ContainerTests {
     }
 
     @Test func singleton() {
-        #expect(Container.main.singleton1 != Container.main.singleton1)
+        #expect(Container.singleton1 != Container.singleton1)
         #expect(Container.$singleton1 == Container.$singleton1)
     }
 
     @Test func factory() {
-        #expect(Container.main.factory != Container.main.factory)
+        #expect(Container.factory != Container.factory)
         #expect(Container.$factory != Container.$factory)
     }
 
@@ -87,17 +87,13 @@ struct ContainerTests {
     }
 }
 
-struct Foo: Equatable {
-    let bar: Int
-}
-
 extension Container {
     @Factory var number = 1
     @Factory var string = "foo"
     @Factory var double = 0.0
     @Factory var bool = false
     @Factory var type = Foo(bar: 1)
-    @Factory var ternary: Int = isTest ? 1 : 2
+    @Factory var ternary = isTest ? 1 : 2
 
     @Factory var factory: String {
         UUID().uuidString
@@ -114,6 +110,10 @@ extension Container {
     @Auth var auth: String {
         UUID().uuidString
     }
+}
+
+struct Foo: Equatable {
+    let bar: Int
 }
 
 @attached(accessor)

@@ -29,5 +29,5 @@ let package = Package(
         .target(name: "Fusion", dependencies: ["Plugin"], path: "Fusion"),
         .testTarget(name: "Tests", dependencies: ["Fusion"], path: "Tests"),
     ],
-    swiftLanguageModes: [.v5]
+    swiftLanguageModes: [.v5, .v6]
 )
