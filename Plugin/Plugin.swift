@@ -97,24 +97,7 @@ extension VariableDeclSyntax {
     }
 
     private func inferType() -> String? {
-        guard let initializerExpression else { return nil }
-        if initializerExpression.is(IntegerLiteralExprSyntax.self) {
-            return "Int"
-        } else if initializerExpression.is(StringLiteralExprSyntax.self) {
-            return "String"
-        } else if initializerExpression.is(BooleanLiteralExprSyntax.self) {
-            return "Bool"
-        } else if initializerExpression.is(FloatLiteralExprSyntax.self) {
-            return "Double"
-        } else if
-            let function = initializerExpression.as(FunctionCallExprSyntax.self),
-            let declReference = function.calledExpression.as(DeclReferenceExprSyntax.self),
-            declReference.isLikelyType
-        {
-            return declReference.baseName.text
-        } else {
-            return nil
-        }
+        initializerExpression?.inferType()
     }
 
     fileprivate var name: String? {
@@ -127,6 +110,36 @@ extension VariableDeclSyntax {
 
     fileprivate var isComputed: Bool {
         bindings.first?.accessorBlock != nil
+    }
+}
+
+extension ExprSyntax {
+    fileprivate func inferType() -> String? {
+        if `is`(IntegerLiteralExprSyntax.self) {
+            return "Int"
+        } else if `is`(StringLiteralExprSyntax.self) {
+            return "String"
+        } else if `is`(BooleanLiteralExprSyntax.self) {
+            return "Bool"
+        } else if `is`(FloatLiteralExprSyntax.self) {
+            return "Double"
+        } else if
+            let function = FunctionCallExprSyntax(self),
+            let declReference = DeclReferenceExprSyntax(function.calledExpression),
+            declReference.isLikelyType
+        {
+            return declReference.baseName.text
+        } else if let ternary = TernaryExprSyntax(self) {
+            return ternary.thenExpression.inferType()
+        } else if
+            let sequence = SequenceExprSyntax(self),
+            sequence.elements.count > 1,
+            let ternary = sequence.elements.compactMap({ UnresolvedTernaryExprSyntax($0) }).first
+        {
+            return ternary.thenExpression.inferType()
+        } else {
+            return nil
+        }
     }
 }
 
