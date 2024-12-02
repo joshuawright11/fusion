@@ -44,6 +44,10 @@ public final class Container: @unchecked Sendable {
         }
     }
 
+    public static func reset(_ scope: Scope = .singleton) {
+        Container.main.reset(scope)
+    }
+
     // MARK: Mocking
 
     public func mock<T>(_ key: KeyPath<Container, T>, value: T) {
@@ -52,7 +56,7 @@ public final class Container: @unchecked Sendable {
         }
     }
 
-    public func mock(_ mocker: (Container) -> Void, then perform: () -> Void) {
+    public static func mock(_ mocker: (Container) -> Void, then perform: () -> Void) {
         let copy = Container()
         copy.cache = lock.withLock { cache }
         mocker(copy)

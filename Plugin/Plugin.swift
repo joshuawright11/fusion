@@ -10,11 +10,6 @@ struct Plugin: CompilerPlugin {
 }
 
 enum ResolveMacro: PeerMacro, AccessorMacro {
-    struct Error: Swift.Error, CustomDebugStringConvertible, ExpressibleByStringLiteral {
-        private let message: String
-        var debugDescription: String { message }
-        init(stringLiteral value: String) { self.message = value }
-    }
 
     // MARK: AccessorMacro
 
@@ -22,7 +17,7 @@ enum ResolveMacro: PeerMacro, AccessorMacro {
         of node: AttributeSyntax,
         providingAccessorsOf declaration: some DeclSyntaxProtocol,
         in context: some MacroExpansionContext
-    ) throws (Error) -> [AccessorDeclSyntax] {
+    ) throws (FusionPluginError) -> [AccessorDeclSyntax] {
         guard let variable = declaration.variable else {
             throw "ResolveMacro can only be applied to properties"
         }
@@ -48,7 +43,7 @@ enum ResolveMacro: PeerMacro, AccessorMacro {
         of node: AttributeSyntax,
         providingPeersOf declaration: some DeclSyntaxProtocol,
         in context: some MacroExpansionContext
-    ) throws (Error) -> [DeclSyntax] {
+    ) throws (FusionPluginError) -> [DeclSyntax] {
         guard
             let variable = declaration.variable,
             let name = variable.name
@@ -57,7 +52,7 @@ enum ResolveMacro: PeerMacro, AccessorMacro {
         }
 
         guard let type = variable.typeName else {
-            throw .init(stringLiteral: "Unable to infer type of '\(name)', please provide an explicit type")
+            throw "Unable to infer type of '\(name)', please provide an explicit type"
         }
 
         guard let scope = node.name?.lowercaseFirstCharacter() else {
@@ -79,9 +74,34 @@ enum ResolveMacro: PeerMacro, AccessorMacro {
     }
 }
 
-extension DeclSyntaxProtocol {
+struct FusionPluginError: Error, CustomDebugStringConvertible, ExpressibleByStringInterpolation {
+    private let message: String
+    var debugDescription: String { message }
+    init(stringLiteral value: String) { self.message = value }
+}
+
+extension SyntaxProtocol {
     fileprivate var variable: VariableDeclSyntax? {
-        `as`(VariableDeclSyntax.self)
+        VariableDeclSyntax(self)
+    }
+
+    fileprivate var `extension`: ExtensionDeclSyntax? {
+        ExtensionDeclSyntax(self)
+    }
+}
+
+extension ExtensionDeclSyntax {
+    fileprivate var typeName: String? {
+        IdentifierTypeSyntax(extendedType)?.name.text
+    }
+
+    fileprivate var properties: [(name: String, type: String)] {
+        memberBlock.members
+            .compactMap(\.variable)
+            .compactMap {
+                guard let name = $0.name, let type = $0.typeName else { return nil}
+                return (name, type)
+            }
     }
 }
 
@@ -154,5 +174,10 @@ extension String {
     fileprivate func lowercaseFirstCharacter() -> String {
         guard let first else { return self }
         return first.lowercased() + dropFirst()
+    }
+
+    fileprivate func uppercaseFirstCharacter() -> String {
+        guard let first else { return self }
+        return first.uppercased() + dropFirst()
     }
 }

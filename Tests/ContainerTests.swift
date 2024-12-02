@@ -5,7 +5,7 @@ import Testing
 @Suite(.serialized)
 struct ContainerTests {
     init() {
-        Container.main.reset()
+        Container.reset()
     }
 
     @Test func singleton() {
@@ -28,7 +28,7 @@ struct ContainerTests {
     @Test func mockClosure() {
         let _ = Container.$singleton1
         let singleton2 = Container.$singleton2
-        Container.main.mock {
+        Container.mock {
             $0.$singleton1 = "baz"
         } then: {
             #expect(Container.$singleton1 == "baz")
@@ -39,12 +39,12 @@ struct ContainerTests {
     }
 
     @Test func scope() {
-        let value = Container.$auth
-        #expect(Container.$auth == Container.$auth)
-        Container.main.reset()
-        #expect(Container.$auth == value)
-        Container.main.reset(.auth)
-        #expect(Container.$auth != value)
+        let value = Container.$session
+        #expect(Container.$session == Container.$session)
+        Container.reset()
+        #expect(Container.$session == value)
+        Container.reset(.session)
+        #expect(Container.$session != value)
     }
 
     @Test func contexts() {
@@ -77,9 +77,9 @@ struct ContainerTests {
         Container.$bool = true
         #expect(Container.$bool == true)
 
-        #expect(Container.$type == Foo(bar: 1))
-        Container.$type = Foo(bar: 2)
-        #expect(Container.$type == Foo(bar: 2))
+        #expect(Container.$type == .value1)
+        Container.$type = .value2
+        #expect(Container.$type == .value2)
 
         #expect(Container.$ternary == 1)
         Container.$ternary = 3
@@ -87,12 +87,12 @@ struct ContainerTests {
     }
 }
 
-extension Container {
+private extension Container {
     @Factory var number = 1
     @Factory var string = "foo"
     @Factory var double = 0.0
     @Factory var bool = false
-    @Factory var type = Foo(bar: 1)
+    @Factory var type = UUID(uuid: UUID.value1.uuid)
     @Factory var ternary = isTest ? 1 : 2
 
     @Factory var factory: String {
@@ -107,19 +107,20 @@ extension Container {
         UUID().uuidString
     }
 
-    @Auth var auth: String {
+    @Session var session: String {
         UUID().uuidString
     }
 }
 
-struct Foo: Equatable {
-    let bar: Int
+private extension UUID {
+    static let value1 = UUID(uuidString: "6a815d0a-77a2-4170-bfab-8f39cd8c92de")!
+    static let value2 = UUID(uuidString: "cdaa4470-a362-4389-ac4a-ac6affc8ed97")!
 }
 
 @attached(accessor)
 @attached(peer, names: prefixed(`$`))
-public macro Auth() = #externalMacro(module: "Plugin", type: "ResolveMacro")
+private macro Session() = #externalMacro(module: "Plugin", type: "ResolveMacro")
 
-extension Container.Scope {
-    static let auth = id("auth")
+private extension Container.Scope {
+    static let session = id("auth")
 }
