@@ -113,7 +113,11 @@ extension AttributeSyntax {
 
 extension VariableDeclSyntax {
     fileprivate var typeName: String? {
-        IdentifierTypeSyntax(bindings.first?.typeAnnotation?.type)?.name.text ?? inferType()
+        guard let type = bindings.first?.typeAnnotation?.type else {
+            return inferType()
+        }
+
+        return type.trimmedDescription
     }
 
     private func inferType() -> String? {

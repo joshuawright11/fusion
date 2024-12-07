@@ -56,15 +56,22 @@ struct ContainerTests {
         #expect(Container.isDevice == true)
     }
 
-    @Test func dependency() {
-        @Dependency(\.$singleton1) var singleton1
+    @Test func injected() {
+        @Injected(\.$singleton1) var singleton1
         #expect(singleton1 == Container.$singleton1)
+        Container.main.set(3)
+        @Injected var int: Int
+        #expect(int == 3)
+        Container.main.setAlias(\.$int)
+        #expect(int == 1)
+        Container.$int = 2
+        #expect(int == 2)
     }
 
-    @Test func defaults() {
-        #expect(Container.$number == 1)
-        Container.$number = 2
-        #expect(Container.$number == 2)
+    @Test func setting() {
+        #expect(Container.$int == 1)
+        Container.$int = 2
+        #expect(Container.$int == 2)
 
         #expect(Container.$string == "foo")
         Container.$string = "bar"
@@ -86,10 +93,26 @@ struct ContainerTests {
         Container.$ternary = 3
         #expect(Container.$ternary == 3)
     }
+
+    @Test func types() {
+        #expect(Container.main.get(Int.self) == nil)
+        Container.main.set(2)
+        #expect(Container.main.get(Int.self) == 2)
+        Container.main.setAlias(\.$int)
+        #expect(Container.main.get(Int.self) == 1)
+        Container.$int = 3
+        #expect(Container.main.get(Int.self) == 3)
+        #expect(Container.main.require(Int.self) == 3)
+    }
+
+    @Test func unwrapped() {
+        Container.$fatal = "foo"
+        #expect(Container.$fatal == "foo")
+    }
 }
 
 private extension Container {
-    @Factory var number = 1
+    @Factory var int = 1
     @Factory var string = "foo"
     @Factory var double = 0.0
     @Factory var bool = false
@@ -110,6 +133,10 @@ private extension Container {
 
     @Session var session: String {
         UUID().uuidString
+    }
+
+    @Singleton var fatal: String {
+        fatalError("not set")
     }
 }
 

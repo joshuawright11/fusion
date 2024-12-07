@@ -5,7 +5,7 @@ import PackageDescription
 let package = Package(
     name: "fusion",
     platforms: [
-        .iOS(.v17),
+        .iOS(.v16),
         .macOS(.v13),
         .tvOS(.v13),
         .watchOS(.v6),
@@ -27,7 +27,7 @@ let package = Package(
             path: "Plugin"
         ),
         .target(name: "Fusion", dependencies: ["Plugin"], path: "Fusion"),
-        .testTarget(name: "Tests", dependencies: ["Fusion"], path: "Tests"),
+        .testTarget(name: "FusionTests", dependencies: ["Fusion"], path: "Tests"),
     ],
     swiftLanguageModes: [.v5, .v6]
 )
