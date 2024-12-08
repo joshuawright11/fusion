@@ -3,7 +3,7 @@ import SwiftCompilerPlugin
 import SwiftSyntaxMacros
 
 @main
-struct Plugin: CompilerPlugin {
+struct FusionPlugin: CompilerPlugin {
     let providingMacros: [Macro.Type] = [
         ResolveMacro.self,
     ]
@@ -59,9 +59,10 @@ enum ResolveMacro: PeerMacro, AccessorMacro {
             throw "Unable to read attribute name"
         }
 
+        let access = variable.access.map { $0 + " " } ?? ""
         return [
             """
-            var $\(raw: name): \(raw: type) {
+            \(raw: access)var $\(raw: name): \(raw: type) {
                 get {
                     resolve(\\.$\(raw: name), .\(raw: scope)) { \(raw: name) }
                 }
@@ -112,6 +113,10 @@ extension AttributeSyntax {
 }
 
 extension VariableDeclSyntax {
+    fileprivate var access: String? {
+        DeclModifierSyntax(modifiers.first)?.name.text
+    }
+
     fileprivate var typeName: String? {
         guard let type = bindings.first?.typeAnnotation?.type else {
             return inferType()

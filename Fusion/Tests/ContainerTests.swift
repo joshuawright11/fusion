@@ -147,7 +147,7 @@ private extension UUID {
 
 @attached(accessor)
 @attached(peer, names: prefixed(`$`))
-private macro Session() = #externalMacro(module: "Plugin", type: "ResolveMacro")
+private macro Session() = #externalMacro(module: "FusionPlugin", type: "ResolveMacro")
 
 private extension Container.Scope {
     static let session = id("auth")

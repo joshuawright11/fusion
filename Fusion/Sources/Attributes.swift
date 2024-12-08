@@ -1,10 +1,10 @@
 @attached(accessor)
 @attached(peer, names: prefixed(`$`))
-public macro Singleton() = #externalMacro(module: "Plugin", type: "ResolveMacro")
+public macro Singleton() = #externalMacro(module: "FusionPlugin", type: "ResolveMacro")
 
 @attached(accessor)
 @attached(peer, names: prefixed(`$`))
-public macro Factory() = #externalMacro(module: "Plugin", type: "ResolveMacro")
+public macro Factory() = #externalMacro(module: "FusionPlugin", type: "ResolveMacro")
 
 @propertyWrapper
 public struct Injected<T> {

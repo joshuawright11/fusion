@@ -18,16 +18,16 @@ let package = Package(
     ],
     targets: [
         .macro(
-            name: "Plugin",
+            name: "FusionPlugin",
             dependencies: [
                 .product(name: "SwiftSyntax", package: "swift-syntax"),
                 .product(name: "SwiftSyntaxMacros", package: "swift-syntax"),
                 .product(name: "SwiftCompilerPlugin", package: "swift-syntax"),
             ],
-            path: "Plugin"
+            path: "FusionPlugin/Sources"
         ),
-        .target(name: "Fusion", dependencies: ["Plugin"], path: "Fusion"),
-        .testTarget(name: "FusionTests", dependencies: ["Fusion"], path: "Tests"),
+        .target(name: "Fusion", dependencies: ["FusionPlugin"], path: "Fusion/Sources"),
+        .testTarget(name: "FusionTests", dependencies: ["Fusion"], path: "Fusion/Tests"),
     ],
     swiftLanguageModes: [.v5, .v6]
 )
