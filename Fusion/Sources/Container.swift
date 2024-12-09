@@ -29,7 +29,6 @@ public final class Container: @unchecked Sendable {
     }
 
     @TaskLocal public static var main = Container()
-    @Singleton private var defaults: [ObjectIdentifier: PartialKeyPath<Container>] = [:]
 
     private let lock = NSRecursiveLock()
     private var cache: [Key: Entry] = [:]
@@ -105,17 +104,20 @@ public final class Container: @unchecked Sendable {
     // MARK: Types
 
     public func set<T>(_ value: T, as type: T.Type = T.self) {
-        cache[.type(type)] = .init(scope: .singleton, get: { value })
+        lock.withLock {
+            cache[.type(type)] = .init(scope: .singleton, get: { value })
+        }
     }
 
     public func get<T>(_ type: T.Type = T.self) -> T? {
-        guard let entry = cache[.type(type)] else { return nil }
+        let entry = lock.withLock { cache[.type(type)] }
+        guard let entry else { return nil }
         return entry.get() as! T?
     }
 
     public func require<T>(_ type: T.Type = T.self) -> T {
         guard let value = get(type) else {
-            fatalError("No default set for \(type). Try registering one with `setDefaultService()` or `Container.setDefault()`")
+            fatalError("No default set for \(type). Try registering one with `set()` or `Container.set()`")
         }
 
         return value
@@ -123,7 +125,9 @@ public final class Container: @unchecked Sendable {
 
     /// Sets a specific key to be returned when the given type is accessed via `get()`.
     public func setAlias<T>(_ key: KeyPath<Container, T>, for type: T.Type = T.self) {
-        cache[.type(type)] = .init(scope: .singleton, get: { self[keyPath: key] })
+        lock.withLock {
+            cache[.type(type)] = .init(scope: .singleton, get: { self[keyPath: key] })
+        }
     }
 
     // MARK: Contexts
