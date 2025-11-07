@@ -2,152 +2,95 @@
 import Foundation
 import Testing
 
-@Suite(.serialized)
 struct ContainerTests {
-    init() {
-        Container.reset()
+    let container = Container()
+
+    @Test func transient() {
+        #expect(container.transient != container.transient)
     }
 
     @Test func singleton() {
-        #expect(Container.singleton1 != Container.singleton1)
-        #expect(Container.$singleton1 == Container.$singleton1)
-    }
-
-    @Test func factory() {
-        #expect(Container.factory != Container.factory)
-        #expect(Container.$factory != Container.$factory)
+        #expect(container.singleton1 == container.singleton1)
     }
 
     @Test func mock() {
-        Container.$singleton1 = "foo"
-        Container.$factory = "bar"
-        #expect(Container.$singleton1 == "foo")
-        #expect(Container.$factory == "bar")
+        container.transient = "bar"
+        container.singleton1 = "foo"
+        #expect(container.transient == "bar")
+        #expect(container.singleton1 == "foo")
     }
 
-    @Test func mockClosure() {
-        let _ = Container.$singleton1
-        let singleton2 = Container.$singleton2
+    @Test func mockTaskLocal() {
+        let singleton1 = Container.singleton1
+        let singleton2 = Container.singleton2
         Container.mock {
-            $0.$singleton1 = "baz"
+            $0.singleton1 = "baz"
         } then: {
-            #expect(Container.$singleton1 == "baz")
-            #expect(Container.$singleton2 == singleton2)
+            #expect(Container.singleton1 == "baz")
+            #expect(Container.singleton2 == singleton2)
         }
 
-        #expect(Container.$singleton1 != "baz")
+        #expect(Container.singleton1 == singleton1)
     }
 
     @Test func scope() {
-        let value = Container.$session
-        #expect(Container.$session == Container.$session)
-        Container.reset()
-        #expect(Container.$session == value)
-        Container.reset(.session)
-        #expect(Container.$session != value)
+        let value = container.session
+        #expect(container.session == container.session)
+        container.reset()
+        #expect(container.session == value)
+        container.reset(.session)
+        #expect(container.session != value)
     }
 
-    @Test func contexts() {
-        #expect(Container.arguments.contains(where: { $0.contains("xctest") }))
-        #expect(Container.isTest == true)
-        #expect(Container.isPreview == false)
-        #expect(Container.isDebug == true)
-        #expect(Container.isSimulator == false)
-        #expect(Container.isDevice == true)
+    @Test func context() {
+        #expect(container.arguments.contains(where: { $0.contains("xctest") }))
+        #expect(container.isTest == true)
+        #expect(container.isPreview == false)
+        #expect(container.isDebug == true)
+        #expect(container.isSimulator != container.isDevice)
     }
 
-    @Test func injected() {
-        @Injected(\.$singleton1) var singleton1
-        #expect(singleton1 == Container.$singleton1)
-        Container.main.set(3)
-        @Injected var int: Int
+    @Test func inject() {
+        @Inject(\.singleton1, container: container) var singleton1
+        #expect(singleton1 == container.singleton1)
+
+        @Inject(container: container) var int: Int
+        container.set(3)
         #expect(int == 3)
-        Container.main.setAlias(\.$int)
+        container.setAlias(\.int, for: Int.self)
         #expect(int == 1)
-        Container.$int = 2
+        container.int = 2
         #expect(int == 2)
     }
 
-    @Test func setting() {
-        #expect(Container.$int == 1)
-        Container.$int = 2
-        #expect(Container.$int == 2)
-
-        #expect(Container.$string == "foo")
-        Container.$string = "bar"
-        #expect(Container.$string == "bar")
-
-        #expect(Container.$double == 0.0)
-        Container.$double = 2
-        #expect(Container.$double == 2)
-
-        #expect(Container.$bool == false)
-        Container.$bool = true
-        #expect(Container.$bool == true)
-
-        #expect(Container.$type == .value1)
-        Container.$type = .value2
-        #expect(Container.$type == .value2)
-
-        #expect(Container.$ternary == 1)
-        Container.$ternary = 3
-        #expect(Container.$ternary == 3)
+    @Test func resolveByType() {
+        #expect(container.get(Int.self) == nil)
+        container.set(2)
+        #expect(container.get(Int.self) == 2)
     }
 
-    @Test func types() {
-        #expect(Container.main.get(Int.self) == nil)
-        Container.main.set(2)
-        #expect(Container.main.get(Int.self) == 2)
-        Container.main.setAlias(\.$int)
-        #expect(Container.main.get(Int.self) == 1)
-        Container.$int = 3
-        #expect(Container.main.get(Int.self) == 3)
-        #expect(Container.main.require(Int.self) == 3)
+    @Test func alias() {
+        container.setAlias(\.int, for: Int.self)
+        #expect(container.get(Int.self) == 1)
+        container.int = 3
+        #expect(container.get(Int.self) == 3)
+        #expect(container.require(Int.self) == 3)
     }
 
-    @Test func unwrapped() {
-        Container.$fatal = "foo"
-        #expect(Container.$fatal == "foo")
+    @Test func noDefaultValue() {
+        container.unset = "foo"
+        #expect(container.unset == "foo")
     }
 }
 
 private extension Container {
-    @Factory var int = 1
-    @Factory var string = "foo"
-    @Factory var double = 0.0
-    @Factory var bool = false
-    @Factory var type = UUID(uuid: UUID.value1.uuid)
-    @Factory var ternary = isTest ? 1 : 2
-
-    @Factory var factory: String {
-        UUID().uuidString
-    }
-
-    @Singleton var singleton1: String {
-        UUID().uuidString
-    }
-
-    @Singleton var singleton2: String {
-        UUID().uuidString
-    }
-
-    @Session var session: String {
-        UUID().uuidString
-    }
-
-    @Singleton var fatal: String {
-        fatalError("not set")
-    }
+    @Service var transient = UUID().uuidString
+    @Service var int = 1
+    @Service(.singleton) var singleton1 = UUID().uuidString
+    @Service(.singleton) var singleton2 = UUID().uuidString
+    @Service(.session) var session = UUID().uuidString
+    @Service var unset: String
 }
-
-private extension UUID {
-    static let value1 = UUID(uuidString: "6a815d0a-77a2-4170-bfab-8f39cd8c92de")!
-    static let value2 = UUID(uuidString: "cdaa4470-a362-4389-ac4a-ac6affc8ed97")!
-}
-
-@attached(accessor)
-@attached(peer, names: prefixed(`$`))
-private macro Session() = #externalMacro(module: "FusionPlugin", type: "ResolveMacro")
 
 private extension Container.Scope {
     static let session = id("auth")

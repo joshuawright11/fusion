@@ -1,28 +1,21 @@
 @attached(accessor)
-@attached(peer, names: prefixed(`$`))
-public macro Singleton() = #externalMacro(module: "FusionPlugin", type: "ResolveMacro")
-
-@attached(accessor)
-@attached(peer, names: prefixed(`$`))
-public macro Factory() = #externalMacro(module: "FusionPlugin", type: "ResolveMacro")
+public macro Service(_ scope: Container.Scope? = nil) = #externalMacro(module: "FusionPlugin", type: "ServiceMacro")
 
 @propertyWrapper
-public struct Injected<T> {
+public struct Inject<T> {
     private let keyPath: KeyPath<Container, T>?
+    private let container: Container
 
     public var wrappedValue: T {
         if let keyPath {
-            Container.main[keyPath: keyPath]
+            container[keyPath: keyPath]
         } else {
-            Container.main.require(T.self)
+            container.require(T.self)
         }
     }
 
-    public init(_ keyPath: KeyPath<Container, T>) {
+    public init(_ keyPath: KeyPath<Container, T>? = nil, container: Container = .main) {
         self.keyPath = keyPath
-    }
-
-    public init(_ type: T.Type = T.self) {
-        self.keyPath = nil
+        self.container = container
     }
 }
