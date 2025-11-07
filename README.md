@@ -1,4 +1,4 @@
-<p align="center"><a href="https://github.com/alchemy-swift/fusion"><img src="https://user-images.githubusercontent.com/6025554/151728294-6185c3ed-ab54-4174-a376-4b2923b647d2.png" width="400" alt="Fusion logo"></a></p>
+<p align="center"><a href="https://github.com/alchemy-swift/fusion"><img src="https://github.com/user-attachments/assets/899e4263-d880-457a-8eb4-8f0ae7c7972c" width="406" height="1024" alt="Fusion logo"></a></p>
 
 <p align="center">
 <a href="https://swift.org"><img src="https://img.shields.io/badge/Swift-6.2-orange.svg" alt="Swift Version"></a>
@@ -9,12 +9,6 @@
 # Fusion
 
 Fusion is a lightweight dependency injection library for Swift. It uses macros to make injection a breeze so you can keep your code testable and modular in modern, Swifty style.
-
-# Why Use Dependency Injection?
-
-"Dependency Injection" is a fancy phrase that refers to providing concrete implementations of abstract service types.
-
-DI helps keep your code modular, testable and maintainable. It lets you define services in one place so that you may easily swap them for other implementations down the road or during tests.
 
 ## Installation
 
