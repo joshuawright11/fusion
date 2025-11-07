@@ -1,4 +1,4 @@
-<p align="center"><a href="https://github.com/alchemy-swift/fusion"><img src="https://github.com/user-attachments/assets/899e4263-d880-457a-8eb4-8f0ae7c7972c" width="406" height="1024" alt="Fusion logo"></a></p>
+<p align="center"><a href="https://github.com/alchemy-swift/fusion"><img width="1024" height="400" alt="fusion_new_logo" src="https://github.com/user-attachments/assets/20cc5a63-6925-457e-86a2-e2f5edfe1fbb" /></a></p>
 
 <p align="center">
 <a href="https://swift.org"><img src="https://img.shields.io/badge/Swift-6.2-orange.svg" alt="Swift Version"></a>
