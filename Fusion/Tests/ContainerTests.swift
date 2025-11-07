@@ -34,12 +34,12 @@ struct ContainerTests {
     }
 
     @Test func scope() {
-        let value = container.session
-        #expect(container.session == container.session)
+        let value = container.customScope
+        #expect(container.customScope == container.customScope)
         container.reset()
-        #expect(container.session == value)
-        container.reset(.session)
-        #expect(container.session != value)
+        #expect(container.customScope == value)
+        container.reset(.custom)
+        #expect(container.customScope != value)
     }
 
     @Test func context() {
@@ -69,7 +69,7 @@ struct ContainerTests {
         #expect(container.get(Int.self) == 2)
     }
 
-    @Test func alias() {
+    @Test func resolveByTypeAlias() {
         container.setAlias(\.int, for: Int.self)
         #expect(container.get(Int.self) == 1)
         container.int = 3
@@ -77,7 +77,7 @@ struct ContainerTests {
         #expect(container.require(Int.self) == 3)
     }
 
-    @Test func noDefaultValue() {
+    @Test func resolveUnset() {
         container.unset = "foo"
         #expect(container.unset == "foo")
     }
@@ -88,10 +88,10 @@ private extension Container {
     @Service var int = 1
     @Service(.singleton) var singleton1 = UUID().uuidString
     @Service(.singleton) var singleton2 = UUID().uuidString
-    @Service(.session) var session = UUID().uuidString
+    @Service(.custom) var customScope = UUID().uuidString
     @Service var unset: String
 }
 
 private extension Container.Scope {
-    static let session = id("auth")
+    static let custom = id("custom")
 }
