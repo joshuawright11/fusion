@@ -167,11 +167,35 @@ final class FusionTest: XCTestCase {
         XCTAssertEqual(container.resolve(String.self), "foo")
         container.unbind(type: String.self)
         XCTAssertNil(container.resolve(String.self))
-        
+
         Container.bind(.singleton, to: String.self, value: "bar")
         XCTAssertEqual(Container.resolve(String.self), "bar")
         Container.unbind(type: String.self)
         XCTAssertNil(Container.resolve(String.self))
+    }
+
+    func testKeyCollision() {
+        // This test verifies that types with the same name from different
+        // modules/namespaces don't collide in the container's storage.
+        //
+        // Without proper type identification, both CoreModule.Service and
+        // AppModule.Service would be stored under the key "Service" and collide.
+
+        // Bind both services with different values
+        container.bind(.singleton, to: CoreModule.Service.self, value: CoreModule.Service(value: "Core"))
+        container.bind(.singleton, to: AppModule.Service.self, value: AppModule.Service(value: "App"))
+
+        // Resolve both and verify they return different instances
+        let coreService = container.resolve(CoreModule.Service.self)
+        let appService = container.resolve(AppModule.Service.self)
+
+        XCTAssertNotNil(coreService, "CoreModule.Service should be resolvable")
+        XCTAssertNotNil(appService, "AppModule.Service should be resolvable")
+        XCTAssertEqual(coreService?.value, "Core", "CoreModule.Service should return the Core instance")
+        XCTAssertEqual(appService?.value, "App", "AppModule.Service should return the App instance")
+
+        // Verify they are truly different instances
+        XCTAssertNotEqual(coreService?.value, appService?.value, "The two Service types should not collide")
     }
 }
 
@@ -182,13 +206,29 @@ private final class TestingDefault {
 
 private final class TestingContainerized: Containerized {
     let container: Container
-    
+
     @Inject        var string: String
     @Inject        var int: Int
     @Inject(true)  var boolTrue: Bool
     @Inject(false) var boolFalse: Bool
-    
+
     init(container: Container) {
         self.container = container
+    }
+}
+
+// MARK: - Types for Key Collision Test
+
+/// Simulates a "Core" module with a Service type
+private enum CoreModule {
+    struct Service {
+        let value: String
+    }
+}
+
+/// Simulates an "App" module with a Service type (same name, different namespace)
+private enum AppModule {
+    struct Service {
+        let value: String
     }
 }
